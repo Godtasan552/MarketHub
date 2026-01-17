@@ -4,21 +4,27 @@ import { ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Container, Nav, Navbar, Row, Col } from 'react-bootstrap';
+import { useSession } from 'next-auth/react';
+import { hasPermission, Action } from '@/lib/auth/permissions';
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const { data: session } = useSession();
 
   if (pathname === '/admin/login') {
     return <>{children}</>;
   }
 
   const menuItems = [
-    { name: 'Dashboard', path: '/admin/dashboard', icon: 'bi-speedometer2' },
-    { name: 'Lock Management', path: '/admin/locks', icon: 'bi-shop' },
-    { name: 'Zone Management', path: '/admin/zones', icon: 'bi-map' },
-    { name: 'Bookings', path: '/admin/bookings', icon: 'bi-calendar-check' },
-    { name: 'Payments', path: '/admin/payments', icon: 'bi-cash-coin' },
+    { name: 'Dashboard', path: '/admin/dashboard', icon: 'bi-speedometer2', permission: 'manage_locks' as Action },
+    { name: 'Lock Management', path: '/admin/locks', icon: 'bi-shop', permission: 'manage_locks' as Action },
+    { name: 'Zone Management', path: '/admin/zones', icon: 'bi-map', permission: 'manage_zones' as Action },
+    { name: 'Staff Management', path: '/admin/staff', icon: 'bi-people', permission: 'manage_staff' as Action },
+    { name: 'Bookings', path: '/admin/bookings', icon: 'bi-calendar-check', permission: 'manage_bookings' as Action },
+    { name: 'Payments', path: '/admin/payments', icon: 'bi-cash-coin', permission: 'manage_payments' as Action },
   ];
+
+  const filteredMenu = menuItems.filter(item => hasPermission(session?.user?.role, item.permission));
 
   return (
     <div className="d-flex flex-column min-vh-100 bg-light">
@@ -31,7 +37,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           <Navbar.Toggle aria-controls="admin-sidebar" />
           <Navbar.Collapse id="admin-navbar" className="d-lg-none">
             <Nav className="me-auto">
-              {menuItems.map((item) => (
+              {filteredMenu.map((item) => (
                 <Nav.Link 
                   key={item.path} 
                   as={Link} 
@@ -52,7 +58,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           {/* Sidebar for Desktop */}
           <Col lg={2} className="d-none d-lg-block bg-white shadow-sm sidebar min-vh-100 py-3">
             <Nav className="flex-column nav-pills">
-              {menuItems.map((item) => (
+              {filteredMenu.map((item) => (
                 <Nav.Link
                   key={item.path}
                   as={Link}

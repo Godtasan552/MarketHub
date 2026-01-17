@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth/auth';
 import connectDB from '@/lib/db/mongoose';
 import Lock from '@/models/Lock';
 import { lockSchema } from '@/lib/validations/lock';
+import { hasPermission } from '@/lib/auth/permissions';
 
 export async function GET(req: NextRequest) {
   try {
@@ -30,9 +31,8 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const session = await auth();
-    // TODO: stricter check for 'admin' role once roles are fully set up
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!hasPermission(session?.user?.role, 'manage_locks')) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     const body = await req.json();

@@ -6,7 +6,7 @@ interface IUser {
   password: string;
   name: string;
   phone?: string;
-  role: 'user' | 'admin' | 'superadmin';
+  role: 'user' | 'staff' | 'admin' | 'superadmin';
   isActive: boolean;
   isBlacklisted: boolean;
   emailVerified: boolean;
@@ -44,7 +44,7 @@ const userSchema = new Schema<IUser, UserModel, IUserMethods>({
   phone: { type: String },
   role: { 
     type: String, 
-    enum: ['user', 'admin', 'superadmin'], 
+    enum: ['user', 'staff', 'admin', 'superadmin'], 
     default: 'user' 
   },
   isActive: { type: Boolean, default: true },
