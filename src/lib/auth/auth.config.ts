@@ -1,5 +1,6 @@
 import type { NextAuthConfig, Session, User } from 'next-auth';
 import type { JWT } from 'next-auth/jwt';
+import { canAccessAdminPanel } from './permissions';
 
 export const authConfig = {
   pages: {
@@ -13,21 +14,22 @@ export const authConfig = {
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
-      const isAdmin = auth?.user?.role === 'admin';
+      const role = auth?.user?.role;
+      const canAccessAdmin = canAccessAdminPanel(role);
+      
       const isOnAdminPanel = nextUrl.pathname.startsWith('/admin');
       const isOnAdminLogin = nextUrl.pathname === '/admin/login';
 
       // 1. Admin Login Page Logic
       if (isOnAdminLogin) {
         if (isLoggedIn) {
-            // If already logged in as admin, go to dashboard
-            if (isAdmin) {
+            // If already logged in as someone who can access admin panel, go to dashboard
+            if (canAccessAdmin) {
                 return Response.redirect(new URL('/admin/dashboard', nextUrl));
             }
-            // If logged in as user, redirect to home (prevent accessing admin login)
+            // If logged in as regular user, redirect to home
             return Response.redirect(new URL('/', nextUrl));
         }
-        // If not logged in, allow access to valid login page
         return true; 
       }
 
@@ -37,15 +39,13 @@ export const authConfig = {
             // Not logged in -> Redirect to Admin Login
             return Response.redirect(new URL('/admin/login', nextUrl));
         }
-        if (!isAdmin) {
-            // Logged in but not admin -> Redirect to Home
+        if (!canAccessAdmin) {
+            // Logged in but no permission -> Redirect to Home
             return Response.redirect(new URL('/', nextUrl));
         }
-        // Admin -> Allow
         return true;
       }
 
-      // 3. Default behavior for other routes
       return true;
     },
     async jwt({ token, user }: { token: JWT, user?: User }) {

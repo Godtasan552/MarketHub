@@ -17,6 +17,8 @@ export const metadata: Metadata = {
   description: "Market Lock Rental System",
 };
 
+import AuthProvider from '@/components/providers/SessionProvider';
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -24,7 +26,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="th" className={`${inter.className} ${notoSansThai.className}`}>
-      <body>{children}</body>
+      <body>
+        <AuthProvider>
+          {children}
+        </AuthProvider>
+      </body>
     </html>
   );
 }
