@@ -9,293 +9,161 @@
 
 ---
 
-## Phase 1: Foundation Setup (สัปดาห์ 1-2)
+## ข้อสันนิษฐานและข้อจำกัด (System Assumptions & Limitations)
+
+เพื่อให้ผู้พัฒนาและผู้บริหารเข้าใจขอบเขตของระบบในเวอร์ชันปัจจุบัน:
+- **Small-to-Medium Segment**: ระบบออกแบบมาเพื่อจัดการตลาดที่มีจำนวนแผงและปริมาณการจองระดับเล็กถึงกลาง
+- **Date-based Complexity**: เลือกใช้การจองแบบระบุวันที่ (Date-based) แทนการระบุเวลาเป็นวินาที เพื่อความเสถียรและลดปัญหาเรื่องเขตเวลา (Time-zone)
+- **Temporary Lock Status**: การใช้ `Lock.status` (booked/available) เป็นการตัดสินใจในช่วงเริ่มต้นเพื่อความรวดเร็ว ในอนาคตควรเปลี่ยนไปใช้การคำนวณจาก Booking Timeline
+- **Fixed Pricing**: ปัจจุบันยังไม่รองรับระบบ Dynamic Pricing ที่เปลี่ยนตามฤดูกาล หรือโปรโมชันซ้อนระดับความซับซ้อนสูง
+
+---
+
+## Technical Stack & Tools (Current)
+
+- **Framework**: Next.js 16 (App Router)
+- **UI Framework**: Bootstrap 5.3 + React Bootstrap
+- **Icons**: Bootstrap Icons
+- **Database**: MongoDB + Mongoose
+- **Auth**: NextAuth.js v5 (Beta)
+- **Validation**: Zod + React Hook Form
+- **Scripting**: tsx (for running TypeScript scripts)
+- **Styling**: Vanilla CSS / SCSS
+
+---
+
+## Phase 1: Foundation Setup (สัปดาห์ 1-2) - **Completed**
 
 ### Week 1: Project Setup & Database
 
 #### Day 1-2: Initialize Project
 ```bash
-# สร้าง Next.js 16 project (ไม่ใช้ Tailwind)
-npx create-next-app@latest market-lock-system --typescript --app --no-tailwind
+# สร้าง Next.js project
+npx create-next-app@latest ./ --typescript --app --no-tailwind
 
-# ติดตั้ง dependencies สำหรับ UI (Bootstrap)
+# ติดตั้ง dependencies สำหรับ UI
 npm install bootstrap react-bootstrap sass bootstrap-icons
 npm install --save-dev @types/react-bootstrap
 
 # ติดตั้ง dependencies หลักอื่นๆ
-npm install mongoose next-auth@beta bcryptjs zod react-hook-form @hookform/resolvers
-npm install -D @types/bcryptjs
+npm install mongoose next-auth@beta bcryptjs zod react-hook-form @hookform/resolvers dotenv
+npm install -D @types/bcryptjs tsx
 ```
 
 **Checklist**:
-- [ ] Setup Git repository
-- [ ] Configure `.gitignore` (เพิ่ม `.env.local`)
-- [ ] Setup ESLint + Prettier
-- [ ] Create folder structure:
-  ```
-  /app
-    /api
-    /(auth)
-      /login
-      /register
-    /(user)
-      /locks
-      /bookings
-      /history
-    /(admin)
-      /dashboard
-      /locks
-      /payments
-  /components
-    /ui
-    /forms
-    /layout
-  /lib
-    /db
-    /auth
-    /utils
-  /models
-  /styles
-    custom-bootstrap.scss
-    globals.css
-  /types
-  ```
+- [x] Setup Git repository
+- [x] Configure `.gitignore`
+- [x] Create folder structure (Admin, API, Models, Lib)
+- [x] Setup SCSS and Bootstrap integration
 
-#### Day 3-4: MongoDB Atlas Setup
-**Steps**:
-1. สร้าง MongoDB Atlas account (free M0)
-2. Create cluster → เลือก region ใกล้เคียง (Singapore)
-3. Create database user
-4. Whitelist IP (0.0.0.0/0 สำหรับ development)
-5. Get connection string
-
-**Mongoose Setup** (`/lib/db/mongoose.ts`):
-```typescript
-import mongoose from 'mongoose';
-
-const MONGODB_URI = process.env.MONGODB_URI!;
-
-if (!MONGODB_URI) {
-  throw new Error('Please define MONGODB_URI in .env.local');
-}
-
-let cached = global.mongoose;
-
-if (!cached) {
-  cached = global.mongoose = { conn: null, promise: null };
-}
-
-async function connectDB() {
-  if (cached.conn) {
-    return cached.conn;
-  }
-
-  if (!cached.promise) {
-    cached.promise = mongoose.connect(MONGODB_URI, {
-      bufferCommands: false,
-    }).then((mongoose) => {
-      return mongoose;
-    });
-  }
-
-  cached.conn = await cached.promise;
-  return cached.conn;
-}
-
-export default connectDB;
-```
-
-**Environment Variables** (`.env.local`):
+#### Day 3-4: MongoDB & Admin Seeding
+**Environment Variables** (`.env`):
 ```env
-# Database
-MONGODB_URI=mongodb+srv://...
+# Database (รองรับทั้ง MONGO_URL และ MONGODB_URI)
+MONGO_URL=mongodb://...
+MONGODB_URI=mongodb://...
 
 # Auth
 NEXTAUTH_URL=http://localhost:3000
-NEXTAUTH_SECRET=your-secret-key-min-32-chars
+NEXTAUTH_SECRET=your-secret
 
 # Cloudinary
-CLOUDINARY_CLOUD_NAME=your-cloud-name
-CLOUDINARY_API_KEY=your-api-key
-CLOUDINARY_API_SECRET=your-api-secret
+CLOUDINARY_CLOUD_NAME=...
+CLOUDINARY_API_KEY=...
+CLOUDINARY_API_SECRET=...
 
-# Email (Resend)
-RESEND_API_KEY=your-resend-key
+# Initial Admin (ใช้สำหรับรัน script seed-admin)
+ADMIN_NAME="Admin Market"
+ADMIN_USERNAME=admin@markethub.com
+ADMIN_PASSWORD=your-secure-password
+```
+
+**Seed Admin Script** (`scripts/seed-admin.ts`):
+ใช้สำหรับสร้าง SuperAdmin คนแรกเข้าฐานข้อมูล
+```bash
+npm run seed-admin
 ```
 
 **Checklist**:
-- [ ] MongoDB Atlas cluster created
-- [ ] Connection successful
-- [ ] Environment variables configured
-- [ ] `.env.example` created
+- [x] MongoDB Atlas cluster created
+- [x] Connection successful (Mongoose singleton setup)
+- [x] `.env` configured with admin credentials
+- [x] Admin seed script implemented and verified
+
 
 #### Day 5-7: Create Mongoose Models
 
 **User Model** (`/models/User.ts`):
 ```typescript
-import mongoose, { Schema, Model } from 'mongoose';
-import bcrypt from 'bcryptjs';
-
 interface IUser {
   email: string;
   password: string;
   name: string;
-  phone?: string;
-  role: 'user' | 'admin' | 'superadmin';
+  role: 'user' | 'staff' | 'admin' | 'superadmin'; // เพิ่มสิทธิ์ staff
   isActive: boolean;
-  isBlacklisted: boolean;
-  emailVerified: boolean;
-  preferences: {
-    notifications: {
-      email: boolean;
-      push: boolean;
-      sms: boolean;
-    };
-  };
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-interface IUserMethods {
-  comparePassword(candidatePassword: string): Promise<boolean>;
-}
-
-type UserModel = Model<IUser, {}, IUserMethods>;
-
-const userSchema = new Schema<IUser, UserModel, IUserMethods>({
-  email: {
-    type: String,
-    required: true,
-    unique: true,
-    lowercase: true,
-    trim: true,
-  },
-  password: {
-    type: String,
-    required: true,
-    minlength: 8,
-  },
   // ... rest of fields
-}, { timestamps: true });
-
-// Hash password before save
-userSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) return next();
-  this.password = await bcrypt.hash(this.password, 12);
-  next();
-});
-
-// Compare password method
-userSchema.methods.comparePassword = async function(candidatePassword: string) {
-  return bcrypt.compare(candidatePassword, this.password);
-};
-
-export default mongoose.models.User || mongoose.model<IUser, UserModel>('User', userSchema);
+}
 ```
 
 **สร้างทั้งหมด 8 models**:
-- [ ] User
-- [ ] Zone
-- [ ] Lock
+- [x] User
+- [x] Zone (ดึงข้อมูลพื้นฐาน)
+- [x] Lock (ดึงข้อมูลพื้นฐาน)
 - [ ] Booking
 - [ ] Payment
 - [ ] InterestList
 - [ ] Notification
 - [ ] Refund
 
-### Week 2: Authentication
+### Week 2: Authentication & RBAC
 
-#### Day 1-3: NextAuth.js Setup
+#### Day 1-3: NextAuth.js v5 Setup (Beta)
+
+**Auth Logic** (`/lib/auth/auth.ts`):
+เราใช้ NextAuth v5 ที่รองรับ Middleware และ Edge Runtime โดยแยกส่วน Config ออกมา
 
 **Auth Config** (`/lib/auth/auth.config.ts`):
 ```typescript
-import { NextAuthOptions } from 'next-auth';
-import CredentialsProvider from 'next-auth/providers/credentials';
-import GoogleProvider from 'next-auth/providers/google';
-import connectDB from '@/lib/db/mongoose';
-import User from '@/models/User';
+import { canAccessAdminPanel } from './permissions';
 
-export const authOptions: NextAuthOptions = {
-  providers: [
-    CredentialsProvider({
-      name: 'Credentials',
-      credentials: {
-        email: { label: 'Email', type: 'email' },
-        password: { label: 'Password', type: 'password' }
-      },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error('Invalid credentials');
-        }
-
-        await connectDB();
-        const user = await User.findOne({ email: credentials.email });
-
-        if (!user || !user.isActive) {
-          throw new Error('Invalid credentials');
-        }
-
-        const isValid = await user.comparePassword(credentials.password);
-        if (!isValid) {
-          throw new Error('Invalid credentials');
-        }
-
-        return {
-          id: user._id.toString(),
-          email: user.email,
-          name: user.name,
-          role: user.role,
-        };
-      }
-    }),
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
-  ],
+export const authConfig = {
   callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.role = user.role;
-        token.id = user.id;
+    authorized({ auth, request: { nextUrl } }) {
+      const isLoggedIn = !!auth?.user;
+      const role = auth?.user?.role;
+      const canAccessAdmin = canAccessAdminPanel(role);
+      
+      const isOnAdminPanel = nextUrl.pathname.startsWith('/admin');
+      
+      if (isOnAdminPanel) {
+        if (!isLoggedIn) return Response.redirect(new URL('/admin/login', nextUrl));
+        if (!canAccessAdmin) return Response.redirect(new URL('/', nextUrl));
+        return true;
       }
+      return true;
+    },
+    async jwt({ token, user }) {
+      if (user) { token.role = user.role; token.id = user.id; }
       return token;
     },
     async session({ session, token }) {
-      if (session.user) {
-        session.user.role = token.role;
-        session.user.id = token.id;
+      if (session.user) { 
+        session.user.role = token.role; 
+        session.user.id = token.id; 
       }
       return session;
     },
   },
-  pages: {
-    signIn: '/login',
-    error: '/login',
-  },
-  session: {
-    strategy: 'jwt',
-    maxAge: 30 * 24 * 60 * 60, // 30 days
-  },
-};
-```
-
-**API Route** (`/app/api/auth/[...nextauth]/route.ts`):
-```typescript
-import NextAuth from 'next-auth';
-import { authOptions } from '@/lib/auth/auth.config';
-
-const handler = NextAuth(authOptions);
-export { handler as GET, handler as POST };
+  providers: [], // Configure in auth.ts
+} satisfies NextAuthConfig;
 ```
 
 **Checklist**:
-- [ ] NextAuth.js configured
-- [ ] Login page created
-- [ ] Register page created
-- [ ] Google OAuth setup (ตัวเลือก)
-- [ ] Protected routes middleware
-- [ ] Role-based access control (RBAC)
+- [x] NextAuth.js v5 configured
+- [x] Separate Login pages (/login, /admin/login)
+- [x] Role-Based Access Control (RBAC) System
+- [x] Middleware protection for admin routes
+
 
 #### Day 4-5: UI Components
 
@@ -379,62 +247,51 @@ export default function LoginForm() {
 
 ---
 
-## Phase 2: Core Features (สัปดาห์ 3-5)
+## Phase 2: Core Features (สัปดาห์ 3-5) - **In Progress**
+### UI & Localization (Updated)
+**สำคัญ**: เพื่อให้ระบบเข้าถึงผู้ใช้ทุกวัย (25 - 60+ ปี) อินเทอร์เฟซทั้งหมดจะถูกปรับเป็น **ภาษาไทย** ที่เข้าใจง่ายและใช้ฟอนต์ **Noto Sans Thai** ที่อ่านง่าย
 
-### Week 3: Lock Management & Viewing
+### Admin Security & RBAC
+เราใช้ระบบ **Role-Based Access Control (RBAC)** ร่วมกับ NextAuth v5 middleware เพื่อแยกสิทธิ์การใช้งานที่ชัดเจน
 
-#### Day 1-2: Admin Lock CRUD
+#### 1. สิทธิ์การใช้งาน (Permissions)
+`/lib/auth/permissions.ts` กำหนดสิทธิ์:
+- `superadmin`: สิทธิ์สูงสุด (จัดการพนักงานระบบได้)
+- `admin`: จัดการทีมงาน, พื้นที่เช่า, และการจอง
+- `staff`: จัดการพื้นที่เช่าและการจอง (แก้ไขพนักงานไม่ได้)
+- `user`: ผู้เช่าทั่วไป
 
+#### 2. การป้องกันเส้นทาง (Route Protection)
+ใช้ `callbacks.authorized` ใน `auth.config.ts` เพื่อเช็คสิทธิ์ `canAccessAdminPanel` ก่อนเข้าหน้า `/admin/*`
+
+---
+
+### Week 3: Admin Management & Dashboard
+
+#### Day 1-2: Admin Dashboard & Staff Management
+**หน้า Dashboard (`/admin/dashboard`)**: 
+- แสดงสถิติภาพรวม: ล็อคทั้งหมด, ล็อคว่าง, จองแล้ว, จำนวนพนักงาน
+- พัฒนา API `/api/admin/stats` เพื่อดึงข้อมูล Real-time
+
+**จัดการพนักงาน (`/admin/staff`)**:
+- CRUD API `/api/admin/staff` สำหรับดึงและเพิ่มพนักงาน
+- หน้าจอ UI ใช้ React Bootstrap Modal สำหรับฟอร์มเพิ่มพนักงาน
+
+#### Day 3-5: Admin Lock & Zone Management (Next Step)
 **API Routes**:
-- `POST /api/admin/locks` - Create lock
-- `GET /api/admin/locks` - List all locks
-- `PATCH /api/admin/locks/[id]` - Update lock
-- `DELETE /api/admin/locks/[id]` - Delete lock
-
-**Example** (`/app/api/admin/locks/route.ts`):
-```typescript
-import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth/auth.config';
-import connectDB from '@/lib/db/mongoose';
-import Lock from '@/models/Lock';
-
-export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  
-  if (!session || session.user.role !== 'admin') {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  await connectDB();
-  const data = await req.json();
-  
-  // Validate with Zod
-  const lock = await Lock.create(data);
-  return NextResponse.json(lock, { status: 201 });
-}
-
-export async function GET(req: NextRequest) {
-  await connectDB();
-  const { searchParams } = new URL(req.url);
-  const zone = searchParams.get('zone');
-  const status = searchParams.get('status');
-
-  const query: any = {};
-  if (zone) query.zone = zone;
-  if (status) query.status = status;
-
-  const locks = await Lock.find(query).populate('zone');
-  return NextResponse.json(locks);
-}
-```
+- `POST /api/admin/locks` - เพิ่มล็อค (Protect with `manage_locks` permission)
+- `GET /api/admin/locks` - รายการล็อคทั้งหมด
+- `POST /api/admin/zones` - เพิ่มโซน (Protect with `manage_zones` permission)
 
 **Checklist**:
-- [ ] Lock CRUD APIs
-- [ ] Zone CRUD APIs
-- [ ] Image upload to Cloudinary
-- [ ] Admin UI for lock management
-- [ ] Form validation
+- [x] RBAC System (Permissions helper)
+- [x] Separate Admin Login UI (Thai)
+- [x] Staff Management (List & Create)
+- [x] Admin Dashboard (Basic Stats)
+- [ ] Lock CRUD UI
+- [ ] Zone CRUD UI
+- [ ] Image upload to Cloudinary (Integration)
+
 
 #### Day 3-5: User Lock Browsing
 
@@ -480,7 +337,40 @@ export default function AvailabilityCalendar({ lockId }) {
 
 ### Week 4-5: Booking System
 
-#### Booking Flow Implementation
+#### 1. นิยามด้านเวลาและการจอง (Booking Time Definitions)
+เพื่อให้ระบบมีความยุติธรรมและลดความซับซ้อนของ Time-zone:
+- **startDate**: วันที่เริ่มใช้งานจริง (เริ่มที่เวลา 00:00:00 ของวันนั้น)
+- **endDate**: วันสุดท้ายของการใช้งาน (สิ้นสุดที่เวลา 23:59:59 ของวันนั้น)
+- **การคำนวณ**: ใช้ Date-based สำหรับรายวัน/รายสัปดาห์/รายเดือน
+
+#### 2. Booking State Machine
+สถานะการจองต้องเป็นไปตามขั้นตอนที่กำหนด (Explicit Transitions):
+
+```mermaid
+stateDiagram-v2
+    [*] --> draft
+    draft --> pending_payment: User confirms booking
+    pending_payment --> pending_verification: User uploads slip
+    pending_payment --> cancelled: Timeout (3h) / User cancels
+    pending_verification --> active: Admin approves
+    pending_verification --> pending_payment: Admin rejects (Wait for new slip)
+    active --> expired: End date reached
+    active --> completed: Manually closed
+    cancelled --> [*]
+    expired --> [*]
+```
+
+**กฎการเปลี่ยนสถานะ (Rules):**
+- ❌ `active` --> `cancelled` (ไม่อนุญาต - ต้องผ่านกระบวนการคืนเงิน/ยกเลิกพิเศษ)
+- ❌ `expired` --> `paid` (ไม่อนุญาต)
+- ✅ `cancelled` ได้เฉพาะในช่วงก่อนเป็น `active` เท่านั้น
+
+#### 3. Design Decision: Lock Status vs. Availability
+> [!NOTE]
+> **ปัจจุบัน**: เราใช้ `Lock.status = 'booked' | 'available'` เพื่อความรวดเร็วในการพัฒนาช่วงแรก
+> **ข้อควรระวัง (Design Decision)**: ในอนาคต `Lock` ควรทำหน้าที่แค่บอกสถานะทางกายภาพ (เช่น `active` | `maintenance`) ส่วน "ความว่าง" (Availability) ควรถูกคำนวณจาก `Booking` ในช่วงเวลาที่เลือก เพื่อให้ล็อคหนึ่งสามารถมีหลายการจองล่วงหน้าได้
+
+#### 4. Booking Flow Implementation
 
 **1. Create Booking API** (`/app/api/bookings/route.ts`):
 ```typescript
@@ -624,6 +514,9 @@ export async function GET(req: NextRequest) {
 
   // Cancel and release locks
   for (const booking of expiredBookings) {
+    // Idempotent guard
+    if (booking.status !== 'pending_payment') continue;
+
     booking.status = 'cancelled';
     booking.cancelledAt = now;
     booking.cancellationReason = 'Payment timeout';
@@ -659,8 +552,10 @@ export async function GET(req: NextRequest) {
 - [ ] Payment upload to Cloudinary
 - [ ] OCR processing (Tesseract.js)
 - [ ] Payment verification UI (Admin)
-- [ ] Cron jobs for timeout
-- [ ] Rate limiting (3 pending bookings max)
+- [ ] Cron jobs for timeout (Idempotent check)
+- [ ] Rate limiting:
+    - User: Max 3 `pending_payment` bookings at the same time
+    - User: Max 5 total bookings per user (Limit to prevent spam/scalping)
 
 ---
 

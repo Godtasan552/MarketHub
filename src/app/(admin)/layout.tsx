@@ -16,12 +16,12 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   }
 
   const menuItems = [
-    { name: 'Dashboard', path: '/admin/dashboard', icon: 'bi-speedometer2', permission: 'manage_locks' as Action },
-    { name: 'Lock Management', path: '/admin/locks', icon: 'bi-shop', permission: 'manage_locks' as Action },
-    { name: 'Zone Management', path: '/admin/zones', icon: 'bi-map', permission: 'manage_zones' as Action },
-    { name: 'Staff Management', path: '/admin/staff', icon: 'bi-people', permission: 'manage_staff' as Action },
-    { name: 'Bookings', path: '/admin/bookings', icon: 'bi-calendar-check', permission: 'manage_bookings' as Action },
-    { name: 'Payments', path: '/admin/payments', icon: 'bi-cash-coin', permission: 'manage_payments' as Action },
+    { name: 'หน้าแรก', path: '/admin/dashboard', icon: 'bi-speedometer2', permission: 'manage_locks' as Action },
+    { name: 'จัดการพื้นที่เช่า', path: '/admin/locks', icon: 'bi-shop', permission: 'manage_locks' as Action },
+    { name: 'จัดการโซน', path: '/admin/zones', icon: 'bi-map', permission: 'manage_zones' as Action },
+    { name: 'จัดการทีมงาน', path: '/admin/staff', icon: 'bi-people', permission: 'manage_staff' as Action },
+    { name: 'รายการจอง', path: '/admin/bookings', icon: 'bi-calendar-check', permission: 'manage_bookings' as Action },
+    { name: 'แจ้งชำระเงิน', path: '/admin/payments', icon: 'bi-cash-coin', permission: 'manage_payments' as Action },
   ];
 
   const filteredMenu = menuItems.filter(item => hasPermission(session?.user?.role, item.permission));

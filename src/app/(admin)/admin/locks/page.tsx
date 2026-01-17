@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Container, Row, Col, Button, Modal, Spinner, Form, InputGroup } from 'react-bootstrap';
 import LockList, { Lock as LockListType } from '@/components/admin/LockList';
 import LockForm from '@/components/admin/LockForm';
+import LockDetail from '@/components/admin/LockDetail';
 import { LockFormData } from '@/lib/validations/lock';
 
 interface Lock extends Omit<LockFormData, 'zone'> {
@@ -16,7 +17,9 @@ export default function LockManagementPage() {
   const [locks, setLocks] = useState<LockListType[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
   const [editingLock, setEditingLock] = useState<Lock | null>(null);
+  const [viewingLock, setViewingLock] = useState<LockListType | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
   const fetchLocks = useCallback(async () => {
@@ -50,24 +53,28 @@ export default function LockManagementPage() {
   };
 
   const handleEdit = (lock: LockListType) => {
-    // Transform lock data to match form structure if needed
     setEditingLock(lock as unknown as Lock);
     setShowModal(true);
   };
 
+  const handleView = (lock: LockListType) => {
+    setViewingLock(lock);
+    setShowViewModal(true);
+  };
+
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this lock?')) return;
+    if (!confirm('คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลล็อกนี้?')) return;
 
     try {
       const res = await fetch(`/api/admin/locks/${id}`, { method: 'DELETE' });
       if (res.ok) {
         fetchLocks();
       } else {
-        alert('Failed to delete lock');
+        alert('ไม่สามารถลบข้อมูลล็อกได้');
       }
     } catch (error) {
       console.error('Error deleting lock', error);
-      alert('Error deleting lock');
+      alert('เกิดข้อผิดพลาดในการลบข้อมูล');
     }
   };
 
@@ -87,7 +94,7 @@ export default function LockManagementPage() {
 
       if (!res.ok) {
         const result = await res.json();
-        throw new Error(result.error || 'Operation failed');
+        throw new Error(result.error || 'การดำเนินการล้มเหลว');
       }
 
       setShowModal(false);
@@ -95,19 +102,19 @@ export default function LockManagementPage() {
     } catch (error: unknown) {
       if (error instanceof Error) {
         console.error('Submit error:', error.message);
-        throw error; // Propagate to form
+        throw error;
       }
-      throw new Error('An unexpected error occurred');
+      throw new Error('เกิดข้อผิดพลาดที่ไม่คาดคิด');
     }
   };
 
   return (
     <Container fluid>
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2 className="mb-0">Lock Management</h2>
-        <Button variant="primary" onClick={handleCreate}>
+        <h2 className="fw-bold mb-0">จัดการพื้นที่เช่า (ล็อกตลาด)</h2>
+        <Button variant="primary" onClick={handleCreate} className="fw-bold">
           <i className="bi bi-plus-lg me-2"></i>
-          Add New Lock
+          เพิ่มล็อกใหม่
         </Button>
       </div>
 
@@ -116,7 +123,7 @@ export default function LockManagementPage() {
             <Form onSubmit={handleSearch}>
                 <InputGroup>
                     <Form.Control
-                        placeholder="Search by Lock Number..."
+                        placeholder="ค้นหาด้วยรหัสล็อก..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
@@ -131,18 +138,20 @@ export default function LockManagementPage() {
       {loading ? (
         <div className="text-center py-5">
           <Spinner animation="border" variant="primary" />
+          <p className="mt-2 text-muted">กำลังโหลดข้อมูล...</p>
         </div>
       ) : (
         <LockList 
           locks={locks} 
+          onView={handleView}
           onEdit={handleEdit} 
           onDelete={handleDelete} 
         />
       )}
 
-      <Modal show={showModal} onHide={() => setShowModal(false)} backdrop="static" size="lg">
+      <Modal show={showModal} onHide={() => setShowModal(false)} backdrop="static" size="lg" centered>
         <Modal.Header closeButton>
-          <Modal.Title>{editingLock ? 'Edit Lock' : 'Create New Lock'}</Modal.Title>
+          <Modal.Title className="fw-bold">{editingLock ? 'แก้ไขข้อมูลล็อก' : 'เพิ่มล็อกใหม่'}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <LockForm 
@@ -151,6 +160,23 @@ export default function LockManagementPage() {
             onCancel={() => setShowModal(false)} 
           />
         </Modal.Body>
+      </Modal>
+
+      {/* View Detail Modal */}
+      <Modal show={showViewModal} onHide={() => setShowViewModal(false)} size="lg" centered>
+        <Modal.Header closeButton className="border-0 pb-0">
+          <Modal.Title className="fw-bold">รายละเอียดข้อมูลล็อก</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="pt-0">
+          {viewingLock && <LockDetail lock={viewingLock} />}
+        </Modal.Body>
+        <Modal.Footer className="border-0">
+          <Button variant="secondary" onClick={() => setShowViewModal(false)}>ปิดหน้าต่าง</Button>
+          <Button variant="primary" onClick={() => {
+            setShowViewModal(false);
+            handleEdit(viewingLock!);
+          }}>แก้ไขข้อมูล</Button>
+        </Modal.Footer>
       </Modal>
     </Container>
   );

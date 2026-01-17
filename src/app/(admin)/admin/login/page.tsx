@@ -57,18 +57,18 @@ export default function AdminLoginPage() {
         <Card.Body className="p-5">
           <div className="text-center mb-5">
             <i className="bi bi-shield-lock-fill text-warning display-4 mb-3"></i>
-            <h2 className="fw-bold text-dark">Admin Console</h2>
-            <p className="text-muted small">Access Restricted to Administrators</p>
+            <h2 className="fw-bold text-dark">ระบบจัดการตลาด</h2>
+            <p className="text-muted small">สำหรับเจ้าหน้าที่และผู้ดูแลระบบเท่านั้น</p>
           </div>
 
           {error && <Alert variant="danger" className="text-center small">{error}</Alert>}
 
           <Form onSubmit={handleSubmit(onSubmit)}>
             <Form.Group className="mb-3">
-              <Form.Label>Email Address</Form.Label>
+              <Form.Label>อีเมล (Email)</Form.Label>
               <Form.Control 
                 type="email" 
-                placeholder="admin@markethub.com"
+                placeholder="เช่น admin@market.com"
                 {...register('email')} 
                 isInvalid={!!errors.email}
               />
@@ -78,10 +78,10 @@ export default function AdminLoginPage() {
             </Form.Group>
 
             <Form.Group className="mb-4">
-              <Form.Label>Password</Form.Label>
+              <Form.Label>รหัสผ่าน (Password)</Form.Label>
               <Form.Control 
                 type="password" 
-                placeholder="••••••••"
+                placeholder="กรอกรหัสผ่านของคุณ"
                 {...register('password')} 
                 isInvalid={!!errors.password}
               />
@@ -91,12 +91,12 @@ export default function AdminLoginPage() {
             </Form.Group>
 
             <Button variant="dark" type="submit" className="w-100 py-2 fw-bold" disabled={loading}>
-              {loading ? 'Authenticating...' : 'Sign In'}
+              {loading ? 'กำลังตรวจสอบสิทธิ์...' : 'เข้าสู่ระบบ'}
             </Button>
           </Form>
         </Card.Body>
         <Card.Footer className="text-center py-3 bg-light border-0">
-          <small className="text-muted">MarketHub System &copy; 2026</small>
+          <small className="text-muted">ระบบจองแผงตลาด MarketHub &copy; 2026</small>
         </Card.Footer>
       </Card>
     </Container>

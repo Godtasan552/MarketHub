@@ -11,7 +11,7 @@ export async function GET() {
     return NextResponse.json(zones);
   } catch (error) {
     console.error('Error fetching zones:', error);
-    return NextResponse.json({ error: 'Failed to fetch zones' }, { status: 500 });
+    return NextResponse.json({ error: 'ไม่สามารถดึงข้อมูลโซนได้' }, { status: 500 });
   }
 }
 
@@ -19,12 +19,12 @@ export async function POST(req: NextRequest) {
   try {
     const session = await auth();
     if (!hasPermission(session?.user?.role, 'manage_zones')) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      return NextResponse.json({ error: 'ไม่มีสิทธิ์เข้าถึง' }, { status: 403 });
     }
 
     const body = await req.json();
     if (!body.name) {
-        return NextResponse.json({ error: 'Name is required' }, { status: 400 });
+        return NextResponse.json({ error: 'ชื่อโซนจำเป็นต้องระบุ' }, { status: 400 });
     }
 
     await connectDB();
@@ -32,6 +32,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(newZone, { status: 201 });
   } catch (error) {
     console.error('Error creating zone:', error);
-    return NextResponse.json({ error: 'Failed to create zone' }, { status: 500 });
+    return NextResponse.json({ error: 'ไม่สามารถสร้างข้อมูลโซนได้' }, { status: 500 });
   }
 }

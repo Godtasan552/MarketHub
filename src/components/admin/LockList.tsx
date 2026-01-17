@@ -10,21 +10,24 @@ export interface Lock {
   pricing: { daily: number; weekly?: number; monthly?: number };
   status: string;
   isActive: boolean;
+  images?: string[];
+  features?: string[];
 }
 
 interface LockListProps {
   locks: Lock[];
+  onView: (lock: Lock) => void;
   onEdit: (lock: Lock) => void;
   onDelete: (id: string) => void;
 }
 
-export default function LockList({ locks, onEdit, onDelete }: LockListProps) {
+export default function LockList({ locks, onView, onEdit, onDelete }: LockListProps) {
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'available': return <Badge bg="success">Available</Badge>;
-      case 'booked': return <Badge bg="warning" text="dark">Booked</Badge>;
-      case 'rented': return <Badge bg="danger">Rented</Badge>;
-      case 'maintenance': return <Badge bg="secondary">Maintenance</Badge>;
+      case 'available': return <Badge bg="success">ว่าง</Badge>;
+      case 'booked': return <Badge bg="warning" text="dark">จองแล้ว</Badge>;
+      case 'rented': return <Badge bg="danger">เช่าแล้ว</Badge>;
+      case 'maintenance': return <Badge bg="secondary">ปิดปรับปรุง</Badge>;
       default: return <Badge bg="light" text="dark">{status}</Badge>;
     }
   };
@@ -33,44 +36,47 @@ export default function LockList({ locks, onEdit, onDelete }: LockListProps) {
       if (typeof zone === 'object' && zone !== null && 'name' in zone) {
         return (zone as { name: string }).name;
       }
-      return 'Unknown Zone';
+      return 'ไม่ระบุโซน';
   };
 
   return (
-    <Table responsive hover className="align-middle">
+    <Table responsive hover className="align-middle border shadow-sm">
       <thead className="table-light">
         <tr>
-          <th>#</th>
-          <th>Zone</th>
-          <th>Size</th>
-          <th>Price (Daily)</th>
-          <th>Status</th>
-          <th className="text-end">Actions</th>
+          <th className="py-3">รหัสล็อก</th>
+          <th className="py-3">โซน</th>
+          <th className="py-3">ขนาด (กว้าง x ยาว)</th>
+          <th className="py-3">ราคา (รายวัน)</th>
+          <th className="py-3">สถานะ</th>
+          <th className="py-3 text-end">จัดการ</th>
         </tr>
       </thead>
       <tbody>
         {locks.length === 0 ? (
           <tr>
-            <td colSpan={6} className="text-center py-4 text-muted">
-              No locks found.
+            <td colSpan={6} className="text-center py-5 text-muted">
+              ไม่พบข้อมูลล็อกในขณะนี้
             </td>
           </tr>
         ) : (
           locks.map((lock) => (
-            <tr key={lock._id}>
+            <tr key={lock._id} style={{ cursor: 'pointer' }} onClick={() => onView(lock)}>
               <td className="fw-bold">{lock.lockNumber}</td>
               <td>{getZoneName(lock.zone)}</td>
               <td>
-                {lock.size.width} x {lock.size.length} {lock.size.unit}
+                {lock.size.width} x {lock.size.length} {lock.size.unit === 'm' ? 'เมตร' : 'ตร.ม.'}
               </td>
               <td>฿{lock.pricing.daily.toLocaleString()}</td>
               <td>{getStatusBadge(lock.status)}</td>
-              <td className="text-end">
+              <td className="text-end" onClick={(e) => e.stopPropagation()}>
                 <ButtonGroup size="sm">
-                  <Button variant="outline-primary" onClick={() => onEdit(lock)}>
+                  <Button variant="outline-info" onClick={() => onView(lock)} title="ดูรายละเอียด">
+                    <i className="bi bi-eye"></i>
+                  </Button>
+                  <Button variant="outline-primary" onClick={() => onEdit(lock)} title="แก้ไข">
                     <i className="bi bi-pencil"></i>
                   </Button>
-                  <Button variant="outline-danger" onClick={() => onDelete(lock._id)}>
+                  <Button variant="outline-danger" onClick={() => onDelete(lock._id)} title="ลบ">
                     <i className="bi bi-trash"></i>
                   </Button>
                 </ButtonGroup>

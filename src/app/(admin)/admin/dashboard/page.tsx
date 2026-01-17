@@ -44,8 +44,8 @@ export default function AdminDashboard() {
   return (
     <Container fluid>
       <div className="mb-4">
-        <h2 className="fw-bold">Dashboard</h2>
-        <p className="text-muted">ยินดีต้อนรับสู่ระบบจัดการตลาด MarketHub</p>
+        <h2 className="fw-bold">หน้าแรก</h2>
+        <p className="text-muted">ยินดีต้อนรับสู่ระบบจัดการตลาด MarketHub (สำหรับเจ้าหน้าที่)</p>
       </div>
 
       {error && <Alert variant="danger">{error}</Alert>}
@@ -70,7 +70,7 @@ export default function AdminDashboard() {
             <Card.Body className="p-4">
               <div className="d-flex justify-content-between align-items-center">
                 <div>
-                  <h6 className="text-uppercase mb-2 opacity-75">ล็อคว่าง</h6>
+                  <h6 className="text-uppercase mb-2 opacity-75">ล็อคที่ว่าง</h6>
                   <h2 className="mb-0 fw-bold">{stats?.availableLocks}</h2>
                 </div>
                 <i className="bi bi-check-circle display-5 opacity-50"></i>
@@ -98,7 +98,7 @@ export default function AdminDashboard() {
             <Card.Body className="p-4">
               <div className="d-flex justify-content-between align-items-center">
                 <div>
-                  <h6 className="text-uppercase mb-2 opacity-75">พนักงาน</h6>
+                  <h6 className="text-uppercase mb-2 opacity-75">จำนวนทีมงาน</h6>
                   <h2 className="mb-0 fw-bold">{stats?.totalStaff}</h2>
                 </div>
                 <i className="bi bi-people display-5 opacity-50"></i>
@@ -112,26 +112,26 @@ export default function AdminDashboard() {
         <Col md={8}>
           <Card className="border-0 shadow-sm">
             <Card.Header className="bg-white border-0 py-3">
-              <h5 className="mb-0 fw-bold">Recent Activities</h5>
+              <h5 className="mb-0 fw-bold">กิจกรรมล่าสุด (Activity)</h5>
             </Card.Header>
             <Card.Body>
-              <p className="text-center py-5 text-muted">เร็วๆ นี้...</p>
+              <p className="text-center py-5 text-muted">กำลังพัฒนา...</p>
             </Card.Body>
           </Card>
         </Col>
         <Col md={4}>
           <Card className="border-0 shadow-sm">
             <Card.Header className="bg-white border-0 py-3">
-              <h5 className="mb-0 fw-bold">System Status</h5>
+              <h5 className="mb-0 fw-bold">สถานะระบบ</h5>
             </Card.Header>
             <Card.Body>
               <div className="d-flex justify-content-between mb-2">
-                <span>API Status</span>
-                <Badge bg="success">Online</Badge>
+                <span>การเชื่อมต่อ API</span>
+                <Badge bg="success">ปกติ</Badge>
               </div>
               <div className="d-flex justify-content-between mb-2">
-                <span>Database</span>
-                <Badge bg="success">Connected</Badge>
+                <span>ฐานข้อมูล (Database)</span>
+                <Badge bg="success">เชื่อมต่อแล้ว</Badge>
               </div>
             </Card.Body>
           </Card>

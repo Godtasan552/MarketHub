@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(locks);
   } catch (error) {
     console.error('Error fetching locks:', error);
-    return NextResponse.json({ error: 'Failed to fetch locks' }, { status: 500 });
+    return NextResponse.json({ error: 'ไม่สามารถดึงข้อมูลล็อกได้' }, { status: 500 });
   }
 }
 
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
   try {
     const session = await auth();
     if (!hasPermission(session?.user?.role, 'manage_locks')) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      return NextResponse.json({ error: 'ไม่มีสิทธิ์เข้าถึง' }, { status: 403 });
     }
 
     const body = await req.json();
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
 
     if (!validationResult.success) {
       return NextResponse.json({ 
-        error: 'Validation failed', 
+        error: 'ข้อมูลไม่ถูกต้อง', 
         details: validationResult.error.format() 
       }, { status: 400 });
     }
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
     // Check for duplicate lock number
     const existingLock = await Lock.findOne({ lockNumber: validationResult.data.lockNumber });
     if (existingLock) {
-      return NextResponse.json({ error: 'Lock number already exists' }, { status: 409 });
+      return NextResponse.json({ error: 'รหัสล็อกนี้มีอยู่ในระบบแล้ว' }, { status: 409 });
     }
 
     const newLock = await Lock.create(validationResult.data);
@@ -58,6 +58,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(newLock, { status: 201 });
   } catch (error) {
     console.error('Error creating lock:', error);
-    return NextResponse.json({ error: 'Failed to create lock' }, { status: 500 });
+    return NextResponse.json({ error: 'ไม่สามารถสร้างข้อมูลล็อกได้' }, { status: 500 });
   }
 }
