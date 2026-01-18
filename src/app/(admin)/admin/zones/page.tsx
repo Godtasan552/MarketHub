@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Container, Button, Modal, Spinner, Alert } from 'react-bootstrap';
 import ZoneList, { Zone } from '@/components/admin/ZoneList';
 import ZoneForm from '@/components/admin/ZoneForm';
+import { showAlert, showConfirm } from '@/lib/swal';
 
 export default function ZoneManagementPage() {
   const [zones, setZones] = useState<Zone[]>([]);
@@ -46,7 +47,8 @@ export default function ZoneManagementPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('คุณแน่ใจหรือไม่ว่าต้องการลบโซนนี้? การลบจะทำได้เมื่อไม่มีล็อกอยู่ในโซนนี้เท่านั้น')) return;
+    const result = await showConfirm('ยืนยันการลบ', 'คุณแน่ใจหรือไม่ว่าต้องการลบโซนนี้? การลบจะทำได้เมื่อไม่มีล็อกอยู่ในโซนนี้เท่านั้น', 'ลบเลย', 'ยกเลิก');
+    if (!result.isConfirmed) return;
 
     try {
       const res = await fetch(`/api/admin/zones/${id}`, { method: 'DELETE' });
@@ -55,11 +57,11 @@ export default function ZoneManagementPage() {
       if (res.ok) {
         fetchZones();
       } else {
-        alert(data.error || 'ไม่สามารถลบโซนได้');
+        showAlert('ล้มเหลว', data.error || 'ไม่สามารถลบโซนได้', 'error');
       }
     } catch (error) {
       console.error('Error deleting zone', error);
-      alert('เกิดข้อผิดพลาดในการลบข้อมูล');
+      showAlert('เกิดข้อผิดพลาด', 'เกิดข้อผิดพลาดในการลบข้อมูล กรุณาลองใหม่อีกครั้ง', 'error');
     }
   };
 

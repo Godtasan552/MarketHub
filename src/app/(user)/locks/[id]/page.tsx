@@ -5,6 +5,7 @@ import { Container, Row, Col, Card, Badge, Button, Carousel, Alert, Spinner, For
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import NextLink from 'next/link';
+import { showAlert } from '@/lib/swal';
 
 interface Lock {
   _id: string;
@@ -60,7 +61,7 @@ export default function LockDetailPage() {
     }
 
     if (!startDate) {
-      alert('กรุณาเลือกวันที่เริ่มเช่า');
+      showAlert('กรุณาเลือกวันที่', 'กรุณาเลือกวันที่เริ่มเช่า', 'warning');
       return;
     }
 
@@ -80,11 +81,11 @@ export default function LockDetailPage() {
       if (res.ok) {
         router.push(`/my-bookings/${result._id}`);
       } else {
-        alert(result.error || 'การจองล้มเหลว');
+        showAlert('การจองล้มเหลว', result.error || 'ไม่สามารถทำรายการได้ในขณะนี้', 'error');
       }
     } catch (e: unknown) {
       console.error(e);
-      alert('เกิดข้อผิดพลาดในการส่งข้อมูล');
+      showAlert('เกิดข้อผิดพลาด', 'เกิดข้อผิดพลาดในการส่งข้อมูล กรุณาลองใหม่อีกครั้ง', 'error');
     } finally {
       setBookingLoading(false);
     }

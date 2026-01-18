@@ -6,6 +6,7 @@ import LockList, { Lock as LockListType } from '@/components/admin/LockList';
 import LockForm from '@/components/admin/LockForm';
 import LockDetail from '@/components/admin/LockDetail';
 import { LockFormData } from '@/lib/validations/lock';
+import { showAlert, showConfirm } from '@/lib/swal';
 
 interface Lock extends Omit<LockFormData, 'zone'> {
   _id: string;
@@ -63,18 +64,19 @@ export default function LockManagementPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลล็อกนี้?')) return;
+    const result = await showConfirm('ยืนยันการลบ', 'คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลล็อกนี้?', 'ลบข้อมูล', 'ยกเลิก');
+    if (!result.isConfirmed) return;
 
     try {
       const res = await fetch(`/api/admin/locks/${id}`, { method: 'DELETE' });
       if (res.ok) {
         fetchLocks();
       } else {
-        alert('ไม่สามารถลบข้อมูลล็อกได้');
+        showAlert('ล้มเหลว', 'ไม่สามารถลบข้อมูลล็อกได้ในขณะนี้', 'error');
       }
     } catch (error) {
       console.error('Error deleting lock', error);
-      alert('เกิดข้อผิดพลาดในการลบข้อมูล');
+      showAlert('เกิดข้อผิดพลาด', 'เกิดข้อผิดพลาดในการลบข้อมูล กรุณาลองใหม่อีกครั้ง', 'error');
     }
   };
 

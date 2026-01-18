@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Container, Table, Badge, Button, Modal, Form, Spinner, Alert, Row, Col } from 'react-bootstrap';
+import { showAlert } from '@/lib/swal';
 
 interface Payment {
   _id: string;
@@ -68,10 +69,10 @@ export default function AdminPaymentsPage() {
         fetchPayments();
       } else {
         const result = await res.json();
-        alert(result.error || 'การดำเนินการล้มเหลว');
+        showAlert('ล้มเหลว', result.error || 'ไม่สามารถดำเนินการได้ในขณะนี้', 'error');
       }
     } catch (err) {
-      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+      showAlert('เกิดข้อผิดพลาด', 'เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์', 'error');
     } finally {
       setActionLoading(false);
     }

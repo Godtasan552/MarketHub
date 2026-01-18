@@ -7,6 +7,7 @@ import Link from 'next/link';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const LinkAny = Link as any;
+import { showAlert } from '@/lib/swal';
 
 interface Booking {
   _id: string;
@@ -68,7 +69,7 @@ export default function BookingDetailPage() {
 
   const handleUploadPayment = async () => {
     if (!file || !id) {
-      alert('กรุณาเลือกไฟล์สลิป');
+      showAlert('ข้อมูลไม่ครบถ้วน', 'กรุณาเลือกไฟล์สลิปการโอนเงิน', 'warning');
       return;
     }
 
@@ -89,15 +90,15 @@ export default function BookingDetailPage() {
       setUploadProgress(90);
       
       if (res.ok) {
-        alert('อัปโหลดสลิปเรียบร้อยแล้ว กรุณารอเจ้าหน้าที่ตรวจสอบ');
+        showAlert('สำเร็จ', 'อัปโหลดสลิปเรียบร้อยแล้ว กรุณารอเจ้าหน้าที่ตรวจสอบ', 'success');
         fetchBooking();
       } else {
         const result = await res.json();
-        alert(result.error || 'การอัปโหลดล้มเหลว');
+        showAlert('การอัปโหลดล้มเหลว', result.error || 'ไม่สามารถอัปโหลดไฟล์ได้ในขณะนี้', 'error');
       }
     } catch (e: unknown) {
       console.error(e);
-      alert('เกิดข้อผิดพลาดในการสื่อสารกับเซิร์ฟเวอร์');
+      showAlert('เกิดข้อผิดพลาด', 'เกิดข้อผิดพลาดในการสื่อสารกับเซิร์ฟเวอร์ กรุณาลองใหม่อีกครั้ง', 'error');
     } finally {
       setUploading(false);
       setUploadProgress(0);

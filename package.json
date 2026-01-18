@@ -25,6 +25,8 @@
     "react-hook-form": "^7.71.1",
     "resend": "^6.7.0",
     "sass": "^1.97.2",
+    "sweetalert2": "^11.26.17",
+    "sweetalert2-react-content": "^5.1.1",
     "tesseract.js": "^7.0.0",
     "zod": "^4.3.5"
   },

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Container, Table, Button, Modal, Form, Badge, Card, Alert } from 'react-bootstrap';
 import { useForm, FieldValues } from 'react-hook-form';
+import { showAlert } from '@/lib/swal';
 
 interface Staff {
   _id: string;
@@ -58,9 +59,9 @@ export default function StaffManagementPage() {
       fetchStaff();
     } catch (err: unknown) {
       if (err instanceof Error) {
-        alert(err.message);
+        showAlert('เกิดข้อผิดพลาด', err.message, 'error');
       } else {
-        alert('An unexpected error occurred');
+        showAlert('เกิดข้อผิดพลาด', 'เกิดข้อผิดพลาดที่ไม่คาดคิด กรุณาลองใหม่อีกครั้ง', 'error');
       }
     }
   };
