@@ -134,7 +134,10 @@ export default function NotificationList({ onRead, onReadAll }: NotificationList
                     </small>
                     {notification.link && (
                          <div className="mt-1">
-                            <Link href={notification.link} className="text-decoration-none small fw-bold">
+                            <Link 
+                              href={notification.link.replace('/bookings/', '/my-bookings/')} 
+                              className="text-decoration-none small fw-bold"
+                            >
                                 ดูรายละเอียด
                             </Link>
                          </div>
@@ -149,6 +152,11 @@ export default function NotificationList({ onRead, onReadAll }: NotificationList
           </ListGroup.Item>
         ))}
       </ListGroup>
+      <div className="p-2 border-top text-center bg-light">
+          <Link href="/notifications" className="text-decoration-none small fw-bold py-1 d-block">
+              ดูการแจ้งเตือนทั้งหมด
+          </Link>
+      </div>
     </div>
   );
 }

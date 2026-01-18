@@ -1,0 +1,271 @@
+'use client';
+
+import { useState, useEffect, useCallback } from 'react';
+import { Container, Row, Col, Card, Badge, Button, Carousel, Alert, Spinner, Form } from 'react-bootstrap';
+import Image from 'next/image';
+import { useParams, useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
+import NextLink from 'next/link';
+import { showAlert } from '@/lib/swal';
+
+interface Lock {
+  _id: string;
+  lockNumber: string;
+  zone: { _id: string; name: string; description?: string };
+  size: { width: number; length: number; unit: string };
+  pricing: { daily: number; weekly?: number; monthly?: number };
+  status: 'available' | 'booked' | 'rented' | 'maintenance';
+  images: string[];
+  features: string[];
+}
+
+export default function LockDetailClient() {
+  const { id } = useParams();
+  const router = useRouter();
+  const { data: session } = useSession();
+  
+  const [lock, setLock] = useState<Lock | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Booking Form State
+  const [startDate, setStartDate] = useState('');
+  const [rentalType, setRentalType] = useState<'daily' | 'weekly' | 'monthly'>('daily');
+  const [bookingLoading, setBookingLoading] = useState(false);
+
+  const fetchLock = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/locks/${id}`);
+      if (res.ok) {
+        const data = await res.json();
+        setLock(data);
+      } else {
+        setError('ไม่พบข้อมูลล็อก');
+      }
+    } catch (e: unknown) {
+      console.error(e);
+      setError('เกิดข้อผิดพลาดในการดึงข้อมูล');
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    if (id) fetchLock();
+  }, [id, fetchLock]);
+
+  const handleBooking = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!session) {
+      router.push(`/login?callbackUrl=/locks/${id}`);
+      return;
+    }
+
+    if (!startDate) {
+      showAlert('กรุณาเลือกวันที่', 'กรุณาเลือกวันที่เริ่มเช่า', 'warning');
+      return;
+    }
+
+    setBookingLoading(true);
+    try {
+      const res = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          lockId: id,
+          startDate,
+          rentalType
+        })
+      });
+
+      const result = await res.json();
+      if (res.ok) {
+        router.push(`/my-bookings/${result._id}`);
+      } else {
+        showAlert('การจองล้มเหลว', result.error || 'ไม่สามารถทำรายการได้ในขณะนี้', 'error');
+      }
+    } catch (e: unknown) {
+      console.error(e);
+      showAlert('เกิดข้อผิดพลาด', 'เกิดข้อผิดพลาดในการส่งข้อมูล กรุณาลองใหม่อีกครั้ง', 'error');
+    } finally {
+      setBookingLoading(false);
+    }
+  };
+
+  if (loading) return (
+    <Container className="py-5 text-center">
+      <Spinner animation="border" variant="primary" />
+    </Container>
+  );
+
+  if (error || !lock) return (
+    <Container className="py-5">
+      <Alert variant="danger">{error || 'ไม่พบข้อมูล'}</Alert>
+    </Container>
+  );
+
+  return (
+    <Container className="py-4">
+      <nav aria-label="breadcrumb" className="mb-4">
+        <ol className="breadcrumb">
+          <li className="breadcrumb-item"><NextLink href="/locks" className="text-decoration-none">จองล็อก</NextLink></li>
+          <li className="breadcrumb-item active">{lock.lockNumber}</li>
+        </ol>
+      </nav>
+
+      <Row className="g-4">
+        <Col lg={8}>
+          <Card className="border-0 shadow-sm overflow-hidden mb-4">
+            {lock.images && lock.images.length > 0 ? (
+              <Carousel fade>
+                {lock.images.map((img, idx) => (
+                  <Carousel.Item key={idx}>
+                    <div className="position-relative" style={{ height: '450px' }}>
+                      <Image
+                        className="d-block w-100"
+                        src={img}
+                        alt={`Market Lock ${lock.lockNumber}`}
+                        fill
+                        style={{ objectFit: 'cover' }}
+                        priority={idx === 0}
+                      />
+                    </div>
+                  </Carousel.Item>
+                ))}
+              </Carousel>
+            ) : (
+              <div className="bg-light text-center py-5">
+                <i className="bi bi-image display-1 text-muted"></i>
+                <p className="text-muted">ไม่มีรูปภาพประกอบ</p>
+              </div>
+            )}
+            <Card.Body className="p-4">
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <h1 className="fw-bold mb-0">ล็อก {lock.lockNumber}</h1>
+                <Badge bg={lock.status === 'available' ? 'success' : 'secondary'} className="px-3 py-2 fs-6">
+                  {lock.status === 'available' ? 'ว่าง' : lock.status}
+                </Badge>
+              </div>
+              <h5 className="text-primary mb-4">
+                <i className="bi bi-geo-alt me-2"></i>โซน: {lock.zone?.name}
+              </h5>
+              
+              <Row className="mb-4">
+                <Col md={6}>
+                  <div className="p-3 bg-light rounded-3 border h-100">
+                    <h6 className="small fw-bold text-uppercase text-muted mb-2">ข้อมูลพื้นที่</h6>
+                    <div className="d-flex align-items-center mb-2">
+                       <i className="bi bi-aspect-ratio me-3 fs-4 text-primary"></i>
+                       <div>
+                          <div className="fw-bold fs-5">{lock.size.width} x {lock.size.length} {lock.size.unit}</div>
+                          <div className="small text-muted">พื้นที่ทั้งหมด {(lock.size.width * lock.size.length).toFixed(2)} {lock.size.unit === 'm' ? 'ตร.ม.' : lock.size.unit}</div>
+                       </div>
+                    </div>
+                  </div>
+                </Col>
+                <Col md={6}>
+                   <div className="p-3 bg-light rounded-3 border h-100">
+                    <h6 className="small fw-bold text-uppercase text-muted mb-2">สิ่งอำนวยความสะดวก</h6>
+                    <div className="d-flex flex-wrap gap-2">
+                      {lock.features && lock.features.length > 0 ? (
+                        lock.features.map((f, i) => <Badge key={i} bg="white" text="dark" className="border">{f}</Badge>)
+                      ) : (
+                        <span className="text-muted small">ไม่มีข้อมูล</span>
+                      )}
+                    </div>
+                  </div>
+                </Col>
+              </Row>
+
+              <h5 className="fw-bold mb-3">รายละเอียดโซน</h5>
+              <p className="text-muted mb-0">{lock.zone?.description || 'ไม่มีรายละเอียดเพิ่มเติม'}</p>
+            </Card.Body>
+          </Card>
+        </Col>
+
+        <Col lg={4}>
+          <Card className="border-0 shadow-sm sticky-top" style={{ top: '100px' }}>
+            <Card.Body className="p-4">
+              <h4 className="fw-bold mb-4">จองพื้นที่ขายของ</h4>
+              
+              <div className="bg-primary bg-opacity-10 p-3 rounded-3 mb-4 text-primary">
+                <div className="small mb-1">เริ่มต้นเพียง</div>
+                <div className="h2 fw-bold mb-0 text-primary">฿{lock.pricing.daily.toLocaleString()} <span className="small text-muted fw-normal">/วัน</span></div>
+              </div>
+
+              <Form onSubmit={handleBooking}>
+                <Form.Group className="mb-3">
+                  <Form.Label className="fw-bold">เลือกรูปแบบการเช่า</Form.Label>
+                  <div className="d-grid gap-2">
+                    <Button 
+                      variant={rentalType === 'daily' ? 'primary' : 'outline-primary'} 
+                      onClick={() => setRentalType('daily')}
+                      className="text-start px-3 py-2"
+                    >
+                      <i className={`bi bi-check-circle${rentalType === 'daily' ? '-fill' : ''} me-2`}></i>
+                      รายวัน <span className="float-end fw-bold">฿{lock.pricing.daily}</span>
+                    </Button>
+                    {lock.pricing.weekly && (
+                      <Button 
+                        variant={rentalType === 'weekly' ? 'primary' : 'outline-primary'} 
+                        onClick={() => setRentalType('weekly')}
+                        className="text-start px-3 py-2"
+                      >
+                         <i className={`bi bi-check-circle${rentalType === 'weekly' ? '-fill' : ''} me-2`}></i>
+                         รายสัปดาห์ <span className="float-end fw-bold">฿{lock.pricing.weekly}</span>
+                      </Button>
+                    )}
+                    {lock.pricing.monthly && (
+                      <Button 
+                        variant={rentalType === 'monthly' ? 'primary' : 'outline-primary'} 
+                        onClick={() => setRentalType('monthly')}
+                        className="text-start px-3 py-2"
+                      >
+                         <i className={`bi bi-check-circle${rentalType === 'monthly' ? '-fill' : ''} me-2`}></i>
+                         รายเดือน <span className="float-end fw-bold">฿{lock.pricing.monthly}</span>
+                      </Button>
+                    )}
+                  </div>
+                </Form.Group>
+
+                <Form.Group className="mb-4">
+                  <Form.Label className="fw-bold">วันที่เริ่มเช่า</Form.Label>
+                  <Form.Control 
+                    type="date" 
+                    min={new Date().toISOString().split('T')[0]}
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="py-2"
+                    required
+                  />
+                  <Form.Text className="text-muted">
+                    *กรุณาเลือกวันที่ตลาดเปิดทำการ
+                  </Form.Text>
+                </Form.Group>
+
+                <div className="d-grid mb-3">
+                  <Button 
+                    variant="primary" 
+                    size="lg" 
+                    type="submit" 
+                    className="fw-bold py-3"
+                    disabled={bookingLoading || lock.status !== 'available'}
+                  >
+                    {bookingLoading ? (
+                      <><Spinner animation="border" size="sm" className="me-2" /> กำลังประมวลผล...</>
+                    ) : (
+                      lock.status === 'available' ? 'ยืนยันการจอง' : 'ไม่สามารถจองได้'
+                    )}
+                  </Button>
+                </div>
+                <p className="text-center small text-muted">
+                  <i className="bi bi-info-circle me-1"></i> เมื่อจองแล้ว คุณจะมีเวลา 3 ชั่วโมงในการชำระเงิน
+                </p>
+              </Form>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+    </Container>
+  );
+}

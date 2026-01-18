@@ -44,13 +44,26 @@ export async function POST(req: NextRequest) {
       resource_type: 'auto',
     });
 
-    // 2. OCR Processing (Background or immediate)
+    // 2. OCR Processing (Use client hint if available, otherwise process on server)
     let ocrResult = {};
-    try {
-      const { processSlipOCR } = await import('@/lib/ocr/slip-ocr');
-      ocrResult = await processSlipOCR(buffer);
-    } catch (ocrErr) {
-      console.error('OCR Processing failed:', ocrErr);
+    const ocrDataHint = formData.get('ocrData') as string;
+    
+    if (ocrDataHint) {
+      try {
+        ocrResult = JSON.parse(ocrDataHint);
+      } catch (e) {
+        console.error('Failed to parse OCR hint:', e);
+      }
+    }
+
+    // Only run server OCR if no client hint or for extra verification if needed
+    if (!ocrDataHint || Object.keys(ocrResult).length === 0) {
+      try {
+        const { processSlipOCR } = await import('@/lib/ocr/slip-ocr');
+        ocrResult = await processSlipOCR(buffer);
+      } catch (ocrErr) {
+        console.error('OCR Processing failed:', ocrErr);
+      }
     }
 
     // 3. Transaction to update database

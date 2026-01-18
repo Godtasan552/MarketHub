@@ -6,6 +6,29 @@ const nextConfig: NextConfig = {
     includePaths: [path.join(__dirname, 'styles'), path.join(__dirname, 'node_modules')],
     silenceDeprecations: ['legacy-js-api'],
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+      },
+    ],
+  },
+  serverExternalPackages: ['tesseract.js'],
+  async redirects() {
+    return [
+      {
+        source: '/bookings/:id',
+        destination: '/my-bookings/:id',
+        permanent: true,
+      },
+      {
+        source: '/bookings',
+        destination: '/my-bookings',
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

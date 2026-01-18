@@ -2,9 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth/auth';
 import connectDB from '@/lib/db/mongoose';
 import Booking from '@/models/Booking';
-import Lock from '@/models/Lock';
-import Zone from '@/models/Zone';
-import Payment from '@/models/Payment';
 
 export async function GET(
   req: NextRequest,

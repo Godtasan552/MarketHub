@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Container, Row, Col, Card, Badge, Button, Alert, Spinner, Form, ProgressBar } from 'react-bootstrap';
+import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Tesseract from 'tesseract.js';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const LinkAny = Link as any;
@@ -36,8 +38,23 @@ export default function BookingDetailPage() {
   
   // Payment Upload State
   const [file, setFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const [showDebug, setShowDebug] = useState(false);
+  
+  // OCR Client States
+  const [ocrLoading, setOcrLoading] = useState(false);
+  const [ocrResult, setOcrResult] = useState<{
+    amount?: number;
+    referenceNumber?: string;
+    confidence?: number;
+    date?: string;
+    time?: string;
+    transferType?: string;
+    rawText?: string;
+  } | null>(null);
 
   const fetchBooking = useCallback(async () => {
     if (!id) return;
@@ -62,10 +79,156 @@ export default function BookingDetailPage() {
   }, [fetchBooking]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files?.[0]) {
-      setFile(e.target.files[0]);
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile) {
+      processFile(selectedFile);
     }
   };
+
+  const processFile = (selectedFile: File) => {
+    setFile(selectedFile);
+    setOcrResult(null);
+    
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const result = event.target?.result as string;
+      setPreview(result);
+      // Run OCR on client
+      runOCR(result);
+    };
+    reader.readAsDataURL(selectedFile);
+  };
+
+  const runOCR = async (imageSrc: string) => {
+    setOcrLoading(true);
+    try {
+        const result = await Tesseract.recognize(imageSrc, 'tha+eng', {
+            logger: (m) => {
+                if (m.status === 'recognizing text') {
+                    setUploadProgress(Math.floor(m.progress * 100));
+                }
+            }
+        });
+        
+        const text = result.data.text;
+        const confidence = result.data.confidence;
+        
+        // --- Shared Regex Logic (Client Side) ---
+        const cleanText = text
+            .replace(/[^\u0E00-\u0E7Fa-zA-Z0-9\s\.\,\:\-\/\(\)\฿]/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+
+        const amountPatterns = [
+            /(?:จำนวนเงิน|ยอดเงิน|โอนเงิน|โอน|pay|amount|total|sum|เงิน).{0,25}?(\d{1,3}(?:,\d{3})*\.\d{2})/i,
+            /(\d{1,3}(?:,\d{3})*\.\d{2})\s*(?:บาท|baht|฿|thb)/i,
+        ];
+
+        let detectedAmount: number | undefined;
+        const allMatches: number[] = [];
+
+        // 1. Try specific patterns (matchAll needs g flag)
+        for (const pattern of amountPatterns) {
+            const regex = new RegExp(pattern instanceof RegExp ? pattern.source : pattern, 'gi');
+            const matches = cleanText.matchAll(regex);
+            for (const m of matches) {
+                const val = parseFloat(m[1].replace(/,/g, ''));
+                if (!isNaN(val)) allMatches.push(val);
+            }
+        }
+
+        // 2. Fallback to any currency-like number (very broad)
+        const genericRegex = /(\d{1,3}(?:[,\s]?\d{3})*[.,]\s?\d{2})/g;
+        const genericMatches = cleanText.matchAll(genericRegex);
+        for (const m of genericMatches) {
+            const val = parseFloat(m[0].replace(/,/g, '').replace(/\s/g, '').replace(',', '.'));
+            if (!isNaN(val)) allMatches.push(val);
+        }
+
+        // 3. Selection Logic
+        if (allMatches.length > 0) {
+            // Priority 1: If any number matches the target amount exactly, pick it
+            const exactMatch = allMatches.find(a => booking && Math.abs(a - booking.totalAmount) < 0.01);
+            
+            if (exactMatch !== undefined) {
+                detectedAmount = exactMatch;
+            } else {
+                // Priority 2: Pick the largest non-zero number (excluding obvious fees like 0.00)
+                const validAmounts = allMatches.filter(a => a > 0.01);
+                if (validAmounts.length > 0) {
+                    detectedAmount = Math.max(...validAmounts);
+                } else {
+                    detectedAmount = 0;
+                }
+            }
+        }
+
+        const refPatterns = [
+            /(?:เลขที่อ้างอิง|หมายเลขอ้างอิง|อ้างอิง|Reference|Ref\s*No\.?|Ref\.?)[:\s]*([A-Z0-9]{10,})/i,
+            /\b\d{18,}\b/
+        ];
+        
+        let detectedRef: string | undefined;
+        for (const pattern of refPatterns) {
+            const match = text.match(pattern);
+            if (match) {
+                detectedRef = (match[1] || match[0]).trim();
+                break;
+            }
+        }
+
+        setOcrResult({
+            amount: detectedAmount,
+            referenceNumber: detectedRef,
+            confidence: confidence,
+            rawText: cleanText // Keep raw text for debug
+        });
+
+    } catch (err) {
+        console.error('OCR Client Error:', err);
+    } finally {
+        setOcrLoading(false);
+        setUploadProgress(0);
+    }
+  };
+
+  const handleRemoveFile = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent re-triggering file input
+    setFile(null);
+    setPreview(null);
+    if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (!uploading && !preview) {
+        setDragging(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragging(false);
+    
+    if (uploading || preview) return;
+
+    const droppedFile = e.dataTransfer.files?.[0];
+    if (droppedFile && droppedFile.type.startsWith('image/')) {
+        processFile(droppedFile);
+    } else if (droppedFile) {
+        showAlert('ไฟล์ไม่ถูกต้อง', 'กรุณาอัปโหลดไฟล์รูปภาพเท่านั้น', 'error');
+    }
+  };
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleUploadPayment = async () => {
     if (!file || !id) {
@@ -80,6 +243,9 @@ export default function BookingDetailPage() {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('bookingId', id);
+      if (ocrResult) {
+        formData.append('ocrData', JSON.stringify(ocrResult));
+      }
 
       setUploadProgress(30);
       const res = await fetch('/api/payments', {
@@ -103,6 +269,8 @@ export default function BookingDetailPage() {
       setUploading(false);
       setUploadProgress(0);
       setFile(null);
+      setPreview(null);
+      setOcrResult(null);
     }
   };
 
@@ -188,12 +356,13 @@ export default function BookingDetailPage() {
             <Card className="border-0 shadow-sm">
                 <Card.Body className="p-4">
                     <h5 className="fw-bold mb-3">สลิปที่อัปโหลดแล้ว</h5>
-                    <div className="bg-light p-2 rounded border text-center">
-                        <img 
+                    <div className="bg-light p-2 rounded border text-center position-relative" style={{ minHeight: '300px' }}>
+                        <Image 
                           src={booking.payment.slipImage} 
                           alt="Uploaded Slip" 
-                          className="img-fluid rounded shadow-sm"
-                          style={{ maxHeight: '400px' }}
+                          className="rounded shadow-sm"
+                          fill
+                          style={{ objectFit: 'contain' }}
                         />
                     </div>
                     <div className="mt-3 text-center text-muted small">
@@ -232,34 +401,154 @@ export default function BookingDetailPage() {
                   <Form.Group>
                     <Form.Label className="fw-bold">อัปโหลดหลักฐานการโอนเงิน (สลิป)</Form.Label>
                     <div 
-                        className="border-2 border-dashed rounded-3 p-4 text-center cursor-pointer hover-bg-light"
-                        onClick={() => !uploading && (document.getElementById('slip-upload') as HTMLInputElement)?.click()}
-                        style={{ borderStyle: 'dashed', cursor: 'pointer' }}
+                        className={`border-2 rounded-4 p-4 text-center transition-all ${
+                            dragging ? 'border-primary bg-primary bg-opacity-10 shadow-sm' : 
+                            preview ? 'border-primary bg-white' : 
+                            'border-dashed cursor-pointer hover-bg-light'
+                        }`}
+                        onClick={() => !uploading && !preview && fileInputRef.current?.click()}
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop}
+                        style={{ 
+                            borderStyle: preview ? 'solid' : 'dashed', 
+                            cursor: preview ? 'default' : 'pointer',
+                            minHeight: '200px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'center',
+                            alignItems: 'center'
+                        }}
                     >
-                        {file ? (
-                            <div className="py-2">
-                                <i className="bi bi-file-earmark-check text-success display-6"></i>
-                                <div className="mt-2 fw-bold">{file.name}</div>
-                                <div className="small text-muted">{(file.size / 1024).toFixed(1)} KB</div>
+                        {preview ? (
+                            <div className="w-100">
+                                <div className="mb-3" style={{ height: '300px', width: '100%', position: 'relative' }}>
+                                    <Image 
+                                      src={preview} 
+                                      alt="Slip Preview" 
+                                      fill 
+                                      style={{ objectFit: 'contain' }}
+                                      className="rounded border shadow-sm"
+                                    />
+                                </div>
+                                <div className="d-flex gap-2 justify-content-center">
+                                    <Button 
+                                      variant="outline-danger" 
+                                      size="sm" 
+                                      onClick={handleRemoveFile}
+                                      disabled={uploading}
+                                      className="px-3"
+                                    >
+                                        <i className="bi bi-trash me-1"></i> ลบออก
+                                    </Button>
+                                    <Button 
+                                      variant="primary" 
+                                      size="sm" 
+                                      onClick={() => fileInputRef.current?.click()}
+                                      disabled={uploading}
+                                      className="px-3 shadow-sm"
+                                    >
+                                        <i className="bi bi-arrow-repeat me-1"></i> เปลี่ยนรูปภาพ
+                                    </Button>
+                                </div>
                             </div>
                         ) : (
-                            <div className="py-2 text-muted">
-                                <i className="bi bi-cloud-arrow-up display-6 mb-2"></i>
-                                <div>กดที่นี่เพื่อเลือกไฟล์หรือลากไฟล์มาวาง</div>
-                                <div className="small text-muted mt-1">รองรับ JPG, PNG (สูงสุด 5MB)</div>
+                            <div className="py-3">
+                                <div className="mb-3">
+                                    <div className="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center shadow-sm" style={{ width: '80px', height: '80px' }}>
+                                        <i className="bi bi-cloud-arrow-up text-primary" style={{ fontSize: '2.5rem' }}></i>
+                                    </div>
+                                </div>
+                                <h5 className="fw-bold text-dark mb-1">ลากและวางสลิปได้ที่นี่</h5>
+                                <p className="text-muted small mb-3">หรือกดปุ่มเพื่อเลือกไฟล์จากเครื่องของคุณ</p>
+                                <Button 
+                                    variant="primary" 
+                                    className="px-4 py-2 rounded-pill fw-bold shadow-sm"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        fileInputRef.current?.click();
+                                    }}
+                                >
+                                    เลือกไฟล์สลิป
+                                </Button>
+                                <div className="mt-3 small text-muted">
+                                    <span className="badge bg-light text-dark border me-1">JPG</span>
+                                    <span className="badge bg-light text-dark border me-1">PNG</span>
+                                    <span className="badge bg-light text-dark border">สูงสุด 5MB</span>
+                                </div>
                             </div>
                         )}
                         <input 
+                            ref={fileInputRef}
                             id="slip-upload"
                             type="file" 
                             accept="image/*" 
                             className="d-none" 
                             onChange={handleFileChange}
-                            disabled={uploading}
+                            disabled={uploading || ocrLoading}
                         />
                     </div>
                   </Form.Group>
                 </div>
+
+                {ocrLoading && (
+                    <div className="alert alert-info py-3 mb-4 border-0 small text-center">
+                        <Spinner animation="border" size="sm" className="me-2" />
+                        กำลังอ่านข้อมูลจากสลิป...
+                        <div className="mt-2">
+                           <ProgressBar now={uploadProgress} style={{ height: '4px' }} />
+                        </div>
+                    </div>
+                )}
+
+                {ocrResult && !ocrLoading && (
+                    <div className="alert alert-success py-3 mb-4 border-0 small">
+                        <div className="d-flex align-items-center mb-2">
+                            <i className="bi bi-shield-check me-2 fs-5"></i>
+                            <strong>ระบบตรวจสอบพบข้อมูลดังนี้:</strong>
+                        </div>
+                        <Row className="g-2">
+                            <Col xs={6}>
+                                <div className="text-muted">จำนวนเงิน:</div>
+                                <div className="fw-bold">
+                                    {ocrResult.amount !== undefined ? `฿${ocrResult.amount.toLocaleString()}` : '-'}
+                                </div>
+                            </Col>
+                            <Col xs={6}>
+                                <div className="text-muted">เลขที่อ้างอิง:</div>
+                                <div className="fw-bold text-truncate">
+                                    {ocrResult.referenceNumber || '-'}
+                                </div>
+                            </Col>
+                        </Row>
+                        {ocrResult.amount !== undefined && ocrResult.amount < booking.totalAmount && (
+                            <div className="mt-2 text-danger fw-bold border-top pt-2">
+                                <i className="bi bi-x-circle-fill me-1"></i>
+                                ยอดเงินที่ตรวจพบ (฿{ocrResult.amount.toLocaleString()}) น้อยกว่ายอดที่ต้องชำระ (฿{booking.totalAmount.toLocaleString()})
+                            </div>
+                        )}
+                        {ocrResult.amount !== undefined && ocrResult.amount > booking.totalAmount && (
+                            <div className="mt-2 text-warning fw-bold border-top pt-2">
+                                <i className="bi bi-exclamation-circle-fill me-1"></i>
+                                ยอดเงินในสลิปเกินกว่ายอดที่ต้องชำระ
+                            </div>
+                        )}
+                        {ocrResult.amount === undefined && (
+                            <div className="mt-2 text-muted small border-top pt-2">
+                                <i className="bi bi-info-circle me-1"></i>
+                                ไม่สามารถตรวจสอบยอดเงินอัตโนมัติได้
+                                <Button variant="link" size="sm" className="p-0 ms-2 text-decoration-none" onClick={() => setShowDebug(!showDebug)}>
+                                    {showDebug ? 'ซ่อน' : 'ตรวจสอบสาเหตุ'}
+                                </Button>
+                            </div>
+                        )}
+                        {showDebug && ocrResult.rawText && (
+                            <div className="mt-2 p-2 bg-dark text-light rounded small font-monospace" style={{ maxHeight: '100px', overflow: 'auto' }}>
+                                <strong>Raw Text:</strong> {ocrResult.rawText}
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 {uploading && (
                     <div className="mb-4">
@@ -267,19 +556,26 @@ export default function BookingDetailPage() {
                             <span>กำลังบันทึกข้อมูล...</span>
                             <span>{uploadProgress}%</span>
                         </div>
-                        <ProgressBar now={uploadProgress} animated style={{ height: '8px' }} />
+                        <ProgressBar now={uploadProgress} animated variant="success" style={{ height: '8px' }} />
                     </div>
                 )}
 
-                <div className="d-grid">
+                <div className="d-grid gap-2">
                   <Button 
-                    variant="primary" 
+                    variant={ocrResult?.amount !== undefined && ocrResult.amount < booking.totalAmount ? "secondary" : "primary"} 
                     size="lg" 
-                    className="fw-bold py-3"
+                    className="fw-bold py-3 shadow-sm"
                     onClick={handleUploadPayment}
-                    disabled={uploading || !file}
+                    disabled={
+                        uploading || 
+                        ocrLoading || 
+                        !file || 
+                        (ocrResult?.amount !== undefined && ocrResult.amount < booking.totalAmount)
+                    }
                   >
-                    {uploading ? 'กำลังประมวลผล...' : 'ยืนยันการแจ้งชำระเงิน'}
+                    {uploading ? 'กำลังบันทึก...' : 
+                     (ocrResult?.amount !== undefined && ocrResult.amount < booking.totalAmount) ? 'ยอดเงินไม่เพียงพอ' : 
+                     'ยืนยันการแจ้งชำระเงิน'}
                   </Button>
                 </div>
               </Card.Body>

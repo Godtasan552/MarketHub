@@ -83,22 +83,22 @@ export const NotificationService = {
       case 'booking_created':
         title = 'จองล็อคสำเร็จ';
         message = `คุณได้จองล็อค #${data.lockNumber} เรียบร้อยแล้ว กรุณาชำระเงินภายในเวลาที่กำหนด`;
-        link = `/bookings/${data.bookingId}`;
+        link = `/my-bookings/${data.bookingId}`;
         break;
       case 'payment_uploaded':
         title = 'ได้รับสลิปแล้ว';
         message = 'ระบบได้รับหลักฐานการชำระเงินของคุณแล้ว กำลังดำเนินการตรวจสอบ';
-        link = `/bookings/${data.bookingId}`;
+        link = `/my-bookings/${data.bookingId}`;
         break;
       case 'booking_approved':
         title = 'การจองได้รับการอนุมัติ';
         message = `การชำระเงินสำหรับล็อค #${data.lockNumber} ได้รับการอนุมัติแล้ว`;
-        link = `/bookings/${data.bookingId}`;
+        link = `/my-bookings/${data.bookingId}`;
         break;
       case 'booking_rejected':
         title = 'การชำระเงินถูกปฏิเสธ';
         message = `เหตุผล: ${data.rejectionReason || 'ไม่ระบุ'} กรุณาตรวจสอบและดำเนินการใหม่`;
-        link = `/bookings/${data.bookingId}`;
+        link = `/my-bookings/${data.bookingId}`;
         break;
       case 'booking_cancelled':
         title = 'การจองถูกยกเลิก';

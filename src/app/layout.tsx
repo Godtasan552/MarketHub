@@ -13,8 +13,12 @@ const notoSansThai = Noto_Sans_Thai({
 });
 
 export const metadata: Metadata = {
-  title: "Admin Dashboard",
-  description: "Market Lock Rental System",
+  title: {
+    template: '%s | Market Hub',
+    default: 'Market Hub | ระบบเช่าล็อกตลาดออนไลน์',
+  },
+  description: 'ระบบจัดการและเช่าพื้นที่ขายของ ล็อกตลาด จองง่าย จ่ายสะดวก พร้อมระบบแจ้งเตือนทันใจ',
+  keywords: ['เช่าที่ขายของ', 'จองล็อกตลาด', 'ตลาดนัดออนไลน์', 'Market Hub'],
 };
 
 import AuthProvider from '@/components/providers/SessionProvider';

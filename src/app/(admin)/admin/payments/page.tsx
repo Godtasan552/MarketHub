@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Container, Table, Badge, Button, Modal, Form, Spinner, Alert, Row, Col } from 'react-bootstrap';
+import Image from 'next/image';
 import { showAlert } from '@/lib/swal';
 
 interface Payment {
@@ -16,8 +17,14 @@ interface Payment {
   slipImage: string;
   ocrResult?: {
     amount?: number;
-    confidence?: number;
+    fee?: number;
+    date?: string;
+    time?: string;
     referenceNumber?: string;
+    fromAccount?: string;
+    toAccount?: string;
+    transferType?: string;
+    confidence?: number;
   };
   status: 'pending' | 'approved' | 'rejected';
   createdAt: string;
@@ -42,7 +49,7 @@ export default function AdminPaymentsPage() {
         const data = await res.json();
         setPayments(data);
       }
-    } catch (err) {
+    } catch {
       setError('ไม่สามารถดึงข้อมูลได้');
     } finally {
       setLoading(false);
@@ -71,7 +78,7 @@ export default function AdminPaymentsPage() {
         const result = await res.json();
         showAlert('ล้มเหลว', result.error || 'ไม่สามารถดำเนินการได้ในขณะนี้', 'error');
       }
-    } catch (err) {
+    } catch {
       showAlert('เกิดข้อผิดพลาด', 'เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์', 'error');
     } finally {
       setActionLoading(false);
@@ -157,13 +164,14 @@ export default function AdminPaymentsPage() {
         </Modal.Header>
         <Modal.Body className="p-0">
           <Row className="g-0">
-            <Col md={7} className="bg-dark d-flex align-items-center justify-content-center p-3" style={{ minHeight: '500px' }}>
+            <Col md={7} className="bg-dark d-flex align-items-center justify-content-center p-3 position-relative" style={{ minHeight: '500px' }}>
               {selectedPayment && (
-                <img 
+                <Image 
                   src={selectedPayment.slipImage} 
                   alt="Payment Slip" 
-                  className="img-fluid shadow"
-                  style={{ maxHeight: '600px', objectFit: 'contain' }}
+                  className="shadow"
+                  fill
+                  style={{ objectFit: 'contain', padding: '10px' }}
                 />
               )}
             </Col>
@@ -182,10 +190,47 @@ export default function AdminPaymentsPage() {
                 <div className="small text-muted mb-1">ยอดเงินตามสลิป:</div>
                 <div className="fw-bold h4 text-success">฿{selectedPayment?.amount.toLocaleString()}</div>
                 {selectedPayment?.ocrResult?.amount && (
-                  <div className="alert alert-info py-2 mt-2 border-0 small">
-                    <i className="bi bi-robot me-2"></i>
-                    OCR ตรวจพบยอดเงิน: <strong>฿{selectedPayment.ocrResult.amount.toLocaleString()}</strong>
-                    <div className="text-muted mt-1">ความมั่นใจ: {(selectedPayment.ocrResult.confidence || 0).toFixed(1)}%</div>
+                  <div className="alert alert-info py-3 mt-2 border-0 small">
+                    <div className="d-flex align-items-center mb-2">
+                      <i className="bi bi-robot me-2 fs-5"></i>
+                      <strong className="text-uppercase">OCR Result</strong>
+                      <Badge bg="info" className="ms-auto">
+                        {(selectedPayment.ocrResult.confidence || 0).toFixed(0)}% Confidence
+                      </Badge>
+                    </div>
+                    
+                    <div className="mb-1 d-flex justify-content-between">
+                      <span className="text-muted">Detected Amount:</span>
+                      <span className="fw-bold">฿{selectedPayment.ocrResult.amount.toLocaleString()}</span>
+                    </div>
+
+                    {selectedPayment.ocrResult.referenceNumber && (
+                      <div className="mb-1 d-flex justify-content-between">
+                        <span className="text-muted">Ref No:</span>
+                        <span className="fw-bold">{selectedPayment.ocrResult.referenceNumber}</span>
+                      </div>
+                    )}
+
+                    {(selectedPayment.ocrResult.date || selectedPayment.ocrResult.time) && (
+                      <div className="mb-1 d-flex justify-content-between">
+                        <span className="text-muted">Date/Time:</span>
+                        <span className="fw-bold">{selectedPayment.ocrResult.date} {selectedPayment.ocrResult.time}</span>
+                      </div>
+                    )}
+
+                    {selectedPayment.ocrResult.fromAccount && (
+                      <div className="mb-1 d-flex justify-content-between">
+                        <span className="text-muted">From Account:</span>
+                        <span className="fw-bold">{selectedPayment.ocrResult.fromAccount}</span>
+                      </div>
+                    )}
+
+                    {selectedPayment.ocrResult.transferType && (
+                      <div className="mb-0 d-flex justify-content-between">
+                        <span className="text-muted">Method:</span>
+                        <Badge bg="secondary">{selectedPayment.ocrResult.transferType}</Badge>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

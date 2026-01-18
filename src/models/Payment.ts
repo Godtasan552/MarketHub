@@ -1,4 +1,4 @@
-import mongoose, { Schema, Model, Document, Types } from 'mongoose';
+import mongoose, { Schema, Document, Types } from 'mongoose';
 
 export interface IPayment extends Document {
   booking: Types.ObjectId;
@@ -31,9 +31,13 @@ const paymentSchema = new Schema<IPayment>({
   slipHash: { type: String, index: true },
   ocrResult: {
     amount: Number,
-    date: Date,
+    fee: Number,
+    date: String,
     time: String,
     referenceNumber: String,
+    fromAccount: String,
+    toAccount: String,
+    transferType: String,
     confidence: Number
   },
   ocrEdited: { type: Boolean, default: false },

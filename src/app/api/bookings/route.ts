@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth/auth';
+import { calculateBookingDetails, RentalType } from '@/lib/utils/booking';
 import connectDB from '@/lib/db/mongoose';
 import Booking from '@/models/Booking';
 import Lock from '@/models/Lock';
@@ -32,25 +33,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'ล็อกนี้ไม่ว่างสำหรับการจอง' }, { status: 400 });
     }
 
-    // Calculate dates
-    const start = new Date(startDate);
-    start.setHours(0, 0, 0, 0);
-    
-    let end = new Date(start);
-    let amount = 0;
-
-    if (rentalType === 'daily') {
-      end = new Date(start);
-      amount = lock.pricing.daily;
-    } else if (rentalType === 'weekly') {
-      end.setDate(start.getDate() + 6);
-      amount = lock.pricing.weekly || (lock.pricing.daily * 7);
-    } else if (rentalType === 'monthly') {
-      end.setDate(start.getDate() + 29);
-      amount = lock.pricing.monthly || (lock.pricing.daily * 30);
-    } else {
-      return NextResponse.json({ error: 'รูปแบบการเช่าไม่ถูกต้อง' }, { status: 400 });
-    }
+    // Calculate dates and amount using utility
+    const { startDate: start, endDate: end, totalAmount: amount } = calculateBookingDetails(
+      lock.pricing,
+      new Date(startDate),
+      rentalType as RentalType
+    );
 
     // Payment deadline: 3 hours from now
     const paymentDeadline = new Date();
@@ -109,7 +97,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function GET(req: NextRequest) {
+export async function GET() {
     try {
         const session = await auth();
         if (!session?.user) {
