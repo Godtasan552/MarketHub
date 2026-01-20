@@ -64,6 +64,12 @@ export default function BookmarksPage() {
       if (!res.ok) {
         // Use a more robust revert strategy if needed, but for now just fetching again is simplest if it fails
         fetchBookmarks(); 
+        return;
+      }
+
+      const data = await res.json();
+      if (typeof data?.bookmarked === 'boolean' && data.bookmarked) {
+        fetchBookmarks();
       }
     } catch (error) {
       console.error('Error removing bookmark', error);
@@ -100,10 +106,10 @@ export default function BookmarksPage() {
       <div className="mb-4 d-flex justify-content-between align-items-center">
         <div>
           <h2 className="fw-bold text-dark mb-1">
-            <i className="bi bi-heart-fill text-danger me-2"></i>
+            <i className="bi bi-bookmark-fill text-primary me-2"></i>
             รายการที่บันทึกไว้
           </h2>
-          <p className="text-muted mb-0">ล็อกที่คุณสนใจและกดติดตามไว้</p>
+          <p className="text-muted mb-0">ล็อกที่คุณสนใจและบันทึกข้อมูลไว้</p>
         </div>
         <LinkAny href="/locks" className="btn btn-outline-primary fw-bold">
             ดูทั้งหมด
@@ -112,9 +118,9 @@ export default function BookmarksPage() {
 
       {locks.length === 0 ? (
         <div className="text-center py-5 bg-white rounded shadow-sm">
-          <i className="bi bi-heart display-1 text-secondary mb-3 d-block opacity-25"></i>
+          <i className="bi bi-bookmark display-1 text-secondary mb-3 d-block opacity-25"></i>
           <h3>ยังไม่มีรายการที่บันทึก</h3>
-          <p className="text-muted">คุณยังไม่ได้กดติดตามล็อกใดๆ</p>
+          <p className="text-muted">คุณยังไม่ได้บันทึกล็อกใดๆ</p>
           <LinkAny href="/locks" className="btn btn-primary fw-bold mt-2">
             ไปเลือกดูและจองล็อก
           </LinkAny>
@@ -128,9 +134,9 @@ export default function BookmarksPage() {
                   className="btn btn-light rounded-circle shadow-sm position-absolute top-0 start-0 m-3 p-0 d-flex align-items-center justify-content-center"
                   style={{ width: '40px', height: '40px', zIndex: 10, border: 'none' }}
                   onClick={(e) => removeBookmark(e, lock._id)}
-                  title="ยกเลิกการติดตาม"
+                  title="ยกเลิกการบันทึก"
                 >
-                  <i className="bi bi-heart-fill text-danger fs-5"></i>
+                  <i className="bi bi-bookmark-fill text-primary fs-5"></i>
                 </button>
                 <LinkAny href={`/locks/${lock._id}`} className="text-decoration-none text-dark">
                   <div className="position-relative">

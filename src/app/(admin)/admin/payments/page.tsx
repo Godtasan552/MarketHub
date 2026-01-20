@@ -120,7 +120,12 @@ export default function AdminPaymentsPage() {
             </thead>
             <tbody>
               {payments.map((p) => (
-                <tr key={p._id} className="align-middle">
+                <tr 
+                  key={p._id} 
+                  className="align-middle cursor-pointer"
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => { setSelectedPayment(p); setShowModal(true); }}
+                >
                   <td className="ps-4">{new Date(p.createdAt).toLocaleString('th-TH')}</td>
                   <td>
                     <div className="fw-bold">{p.user?.name}</div>
@@ -137,7 +142,11 @@ export default function AdminPaymentsPage() {
                     <Button 
                       variant="link" 
                       className="p-0 text-decoration-none"
-                      onClick={() => { setSelectedPayment(p); setShowModal(true); }}
+                      onClick={(e) => { 
+                        e.stopPropagation();
+                        setSelectedPayment(p); 
+                        setShowModal(true); 
+                      }}
                     >
                       <i className="bi bi-image fs-4"></i>
                     </Button>
@@ -145,7 +154,11 @@ export default function AdminPaymentsPage() {
                   <td className="text-end pe-4">
                     <Button 
                       variant="outline-primary" 
-                      onClick={() => { setSelectedPayment(p); setShowModal(true); }}
+                      onClick={(e) => { 
+                        e.stopPropagation();
+                        setSelectedPayment(p); 
+                        setShowModal(true); 
+                      }}
                     >
                       ตรวจสอบ
                     </Button>

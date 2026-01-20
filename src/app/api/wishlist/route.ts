@@ -1,5 +1,6 @@
 
 import { NextResponse } from 'next/server';
+import mongoose from 'mongoose';
 import connectDB from '@/lib/db/mongoose';
 import InterestList from '@/models/InterestList';
 import { auth } from '@/lib/auth/auth';
@@ -29,7 +30,9 @@ export async function GET(req: Request) {
       return NextResponse.json(locks);
     } else {
       const interests = await InterestList.find({ user: session.user.id }).select('lock');
-      const lockIds = interests.map(i => i.lock);
+      const lockIds = interests
+        .map(i => i.lock?.toString())
+        .filter((id): id is string => Boolean(id));
       return NextResponse.json(lockIds);
     }
   } catch (error) {
@@ -50,19 +53,29 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Lock ID is required' }, { status: 400 });
     }
 
+    if (typeof lockId !== 'string' || !mongoose.Types.ObjectId.isValid(lockId)) {
+      return NextResponse.json({ error: 'Invalid Lock ID' }, { status: 400 });
+    }
+
     await connectDB();
 
-    const existing = await InterestList.findOne({ user: session.user.id, lock: lockId });
-
-    if (existing) {
-      await InterestList.findByIdAndDelete(existing._id);
+    const deleted = await InterestList.findOneAndDelete({ user: session.user.id, lock: lockId });
+    if (deleted) {
       return NextResponse.json({ bookmarked: false });
-    } else {
+    }
+
+    try {
       await InterestList.create({
         user: session.user.id,
         lock: lockId,
       });
       return NextResponse.json({ bookmarked: true });
+    } catch (err: unknown) {
+      const mongoErr = err as { code?: number };
+      if (mongoErr?.code === 11000) {
+        return NextResponse.json({ bookmarked: true });
+      }
+      throw err;
     }
   } catch (error) {
     console.error('Error toggling bookmark:', error);

@@ -72,6 +72,17 @@ export default function LockBrowsingPage() {
       if (!res.ok) {
         // Revert if failed
          setBookmarkedLockIds(bookmarkedLockIds);
+        return;
+      }
+
+      const data = await res.json();
+      if (typeof data?.bookmarked === 'boolean') {
+        setBookmarkedLockIds(prev => {
+          const already = prev.includes(lockId);
+          if (data.bookmarked && !already) return [...prev, lockId];
+          if (!data.bookmarked && already) return prev.filter(id => id !== lockId);
+          return prev;
+        });
       }
     } catch (error) {
       console.error('Error toggling bookmark', error);
@@ -213,8 +224,8 @@ export default function LockBrowsingPage() {
                 className={`w-100 fw-medium d-flex align-items-center justify-content-center gap-2 ${showFavoritesOnly ? '' : 'text-muted'}`}
                 onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
               >
-                <i className={`bi ${showFavoritesOnly ? 'bi-heart-fill' : 'bi-heart'}`}></i>
-                <span className="d-none d-sm-inline">ที่ติดตาม</span>
+                <i className={`bi ${showFavoritesOnly ? 'bi-bookmark-fill' : 'bi-bookmark'}`}></i>
+                <span className="d-none d-sm-inline">ที่บันทึกไว้</span>
               </Button>
             </Col>
 
@@ -270,9 +281,9 @@ export default function LockBrowsingPage() {
                       className="btn btn-light rounded-circle shadow-sm position-absolute top-0 start-0 m-3 p-0 d-flex align-items-center justify-content-center"
                       style={{ width: '40px', height: '40px', zIndex: 10, border: 'none' }}
                       onClick={(e) => toggleBookmark(e, lock._id)}
-                      title={bookmarkedLockIds.includes(lock._id) ? "ยกเลิกการติดตาม" : "ติดตาม"}
+                      title={bookmarkedLockIds.includes(lock._id) ? "ยกเลิกการบันทึก" : "บันทึกข้อมูล"}
                     >
-                      <i className={`bi ${bookmarkedLockIds.includes(lock._id) ? 'bi-heart-fill text-danger' : 'bi-heart text-secondary'} fs-5`}></i>
+                      <i className={`bi ${bookmarkedLockIds.includes(lock._id) ? 'bi-bookmark-fill text-primary' : 'bi-bookmark text-secondary'} fs-5`}></i>
                     </button>
                     <LinkAny href={`/locks/${lock._id}`} className="text-decoration-none text-dark">
                       <div className="position-relative">

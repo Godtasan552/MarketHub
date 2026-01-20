@@ -104,6 +104,11 @@ export default function LockDetailClient() {
   }, [id]);
 
   const toggleBookmark = async () => {
+    if (!session) {
+      router.push(`/login?callbackUrl=/locks/${id}`);
+      return;
+    }
+
     // Optimistic Update
     const prevState = isBookmarked;
     setIsBookmarked(!prevState);
@@ -114,8 +119,13 @@ export default function LockDetailClient() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ lockId: id })
       });
-      
+
       if (!res.ok) throw new Error('Failed to toggle bookmark');
+
+      const data = await res.json();
+      if (typeof data?.bookmarked === 'boolean') {
+        setIsBookmarked(data.bookmarked);
+      }
     } catch (e) {
       console.error(e);
       setIsBookmarked(prevState); // Revert
@@ -241,9 +251,9 @@ export default function LockDetailClient() {
                     variant="link" 
                     className="p-0 border-0 ms-2 text-decoration-none"
                     onClick={toggleBookmark}
-                    title={isBookmarked ? 'ยกเลิกการติดตาม' : 'ติดตามสถานะ'}
+                    title={isBookmarked ? 'ยกเลิกการบันทึก' : 'บันทึกข้อมูลล็อกนี้'}
                   >
-                    <i className={`bi ${isBookmarked ? 'bi-heart-fill text-danger' : 'bi-heart text-secondary'} fs-2`}></i>
+                    <i className={`bi ${isBookmarked ? 'bi-bookmark-fill text-primary' : 'bi-bookmark text-secondary'} fs-2`}></i>
                   </Button>
                 </div>
                 <Badge bg={lock.status === 'available' ? 'success' : 'secondary'} className="px-3 py-2 fs-6">
