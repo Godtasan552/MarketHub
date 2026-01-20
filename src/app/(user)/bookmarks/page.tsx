@@ -211,66 +211,68 @@ export default function BookmarksPage() {
           </Button>
         </div>
       ) : (
-        <Row xs={1} md={2} xl={3} className="g-4">
+        <Row xs={2} md={2} lg={3} xl={4} className="g-2 g-md-4">
           {displayedLocks.map((lock) => (
             <Col key={lock._id}>
               <Card className="border-0 shadow-sm h-100 overflow-hidden hover-lift card-hover transition-300 position-relative">
                 <button
-                  className="btn btn-light rounded-circle shadow-sm position-absolute top-0 start-0 m-3 p-0 d-flex align-items-center justify-content-center"
-                  style={{ width: '40px', height: '40px', zIndex: 10, border: 'none' }}
+                  className="btn btn-light rounded-circle shadow-sm position-absolute top-0 start-0 m-2 m-md-3 p-0 d-flex align-items-center justify-content-center"
+                  style={{ width: '32px', height: '32px', zIndex: 10, border: 'none' }}
                   onClick={(e) => removeBookmark(e, lock._id)}
                   title="ยกเลิกการบันทึก"
                 >
-                  <i className="bi bi-bookmark-fill text-primary fs-5"></i>
+                  <i className="bi bi-bookmark-fill text-primary fs-6 fs-md-5"></i>
                 </button>
                 <LinkAny href={`/locks/${lock._id}`} className="text-decoration-none text-dark">
                   <div className="position-relative">
                     {lock.images?.[0] ? (
-                      <Card.Img 
-                        variant="top" 
-                        src={lock.images[0]} 
-                        style={{ height: '200px', objectFit: 'cover' }}
-                      />
+                      <div className="lock-card-img-container">
+                        <Card.Img 
+                          variant="top" 
+                          src={lock.images[0]} 
+                          className="h-100 w-100"
+                          style={{ objectFit: 'cover' }}
+                        />
+                      </div>
                     ) : (
                       <div 
-                        className="bg-secondary bg-opacity-10 d-flex align-items-center justify-content-center"
-                        style={{ height: '200px' }}
+                        className="bg-secondary bg-opacity-10 d-flex align-items-center justify-content-center lock-card-img-placeholder"
                       >
-                        <i className="bi bi-image text-muted fs-1"></i>
+                        <i className="bi bi-image text-muted fs-1 opacity-25"></i>
                       </div>
                     )}
-                    <div className="position-absolute top-0 end-0 m-3">
+                    <div className="position-absolute top-0 end-0 m-2 m-md-3">
                       {getStatusBadge(lock.status)}
                     </div>
-                    <div className="position-absolute bottom-0 start-0 m-3">
-                      <Badge bg="dark" className="bg-opacity-75 backdrop-blur px-3 py-2">
+                    <div className="position-absolute bottom-0 start-0 m-2 m-md-3">
+                      <Badge bg="dark" className="bg-opacity-75 backdrop-blur px-2 px-md-3 py-1 py-md-2 small fw-medium">
                         <i className="bi bi-geo-alt me-1"></i> {lock.zone?.name}
                       </Badge>
                     </div>
                   </div>
-                  <Card.Body className="p-4 pb-0">
-                    <div className="d-flex justify-content-between align-items-start mb-2">
-                      <Card.Title className="fw-bold h4 mb-0">{lock.lockNumber}</Card.Title>
-                      <div className="text-end">
-                        <div className="text-muted small fw-normal" style={{ fontSize: '0.75rem', marginBottom: '-2px' }}>เริ่มต้น</div>
-                        <div className="text-primary fw-bold fs-5">
+                  <Card.Body className="p-2 p-md-4 pb-0">
+                    <div className="d-flex flex-column flex-md-row justify-content-between align-items-start mb-1 mb-md-2">
+                      <Card.Title className="fw-bold fs-5 fs-md-4 mb-0">{lock.lockNumber}</Card.Title>
+                      <div className="text-md-end mt-1 mt-md-0">
+                        <div className="text-muted small fw-normal d-none d-md-block" style={{ fontSize: '0.75rem', marginBottom: '-2px' }}>เริ่มต้น</div>
+                        <div className="text-primary fw-bold fs-6 fs-md-5">
                           ฿{lock.pricing.daily.toLocaleString()} <span className="text-muted small fw-normal">/วัน</span>
                         </div>
                       </div>
                     </div>
-                    <p className="text-muted small mb-0">
+                    <p className="text-muted small mb-0 d-none d-md-block">
                       <i className="bi bi-aspect-ratio me-1"></i> {lock.size.width} x {lock.size.length} เมตร
                     </p>
                   </Card.Body>
                 </LinkAny>
-                <Card.Body className="p-4 pt-0">
-                  <hr className="my-3 opacity-10" />
+                <Card.Body className="p-2 p-md-4 pt-0">
+                  <hr className="my-2 my-md-3 opacity-10" />
                   <div className="d-grid">
                       <Button 
                         as={LinkAny}
                         href={`/locks/${lock._id}`}
                         variant={lock.status === 'available' ? 'primary' : 'outline-secondary'}
-                        className="fw-bold py-2 rounded-3"
+                        className="fw-bold py-1 py-md-2 rounded-3 small"
                         disabled={lock.status !== 'available'}
                       >
                         {lock.status === 'available' ? 'จองทันที' : 'จองแล้ว'}
@@ -284,6 +286,14 @@ export default function BookmarksPage() {
       )}
       
       <style jsx global>{`
+        .lock-card-img-container, .lock-card-img-placeholder {
+          height: 140px;
+        }
+        @media (min-width: 768px) {
+          .lock-card-img-container, .lock-card-img-placeholder {
+            height: 200px;
+          }
+        }
         .hover-lift:hover {
           transform: translateY(-5px);
           box-shadow: 0 1rem 3rem rgba(0,0,0,0.1) !important;
@@ -292,7 +302,8 @@ export default function BookmarksPage() {
           transition: all 0.3s ease;
         }
         .backdrop-blur {
-          backdrop-filter: blur(5px);
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
         }
       `}</style>
     </Container>

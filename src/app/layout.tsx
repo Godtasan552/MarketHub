@@ -21,6 +21,11 @@ export const metadata: Metadata = {
   keywords: ['เช่าที่ขายของ', 'จองล็อกตลาด', 'ตลาดนัดออนไลน์', 'Market Hub'],
 };
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+};
+
 import AuthProvider from '@/components/providers/SessionProvider';
 
 export default function RootLayout({
