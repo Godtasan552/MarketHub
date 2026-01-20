@@ -78,12 +78,9 @@ export async function POST(req: NextRequest) {
       }], { session: dbSession });
 
       // 2. Update Lock Status (Hardcore Race Condition Check)
-      // We perform an atomic update with specific conditions.
-      // If the lock status changed between our initial read and now, this will fail (return null).
       const updatedLock = await Lock.findOneAndUpdate(
         {
           _id: lockId,
-          // Condition: Available OR (Reserved for current user)
           $or: [
             { status: 'available' },
             { status: 'reserved', reservedTo: session.user.id }
@@ -114,25 +111,30 @@ export async function POST(req: NextRequest) {
       }], { session: dbSession });
 
       await dbSession.commitTransaction();
-      dbSession.endSession();
-
-      // Send Notification (Event-based)
-      // Note: session.user.id is used for In-App, session.user.email for Email
+      
+      // Send Notification (Outside Transaction - Best Practice)
       if (session.user?.id) {
-         await NotificationService.send(session.user.id, 'booking_created', {
-            bookingId: booking[0]._id.toString(),
-            lockNumber: lock.lockNumber,
-            totalAmount: amount,
-            paymentDeadline,
-            userEmail: session.user.email || undefined
-         });
+         try {
+            await NotificationService.send(session.user.id, 'booking_created', {
+               bookingId: booking[0]._id.toString(),
+               lockNumber: lock.lockNumber,
+               totalAmount: amount,
+               paymentDeadline,
+               userEmail: session.user.email || undefined
+            });
+         } catch (notifyErr) {
+            console.error('Notification failed but booking was successful:', notifyErr);
+         }
       }
 
       return NextResponse.json(booking[0], { status: 201 });
     } catch (err: unknown) {
-      await dbSession.abortTransaction();
-      dbSession.endSession();
+      if (dbSession.inTransaction()) {
+        await dbSession.abortTransaction();
+      }
       throw err;
+    } finally {
+      dbSession.endSession();
     }
 
   } catch (error: unknown) {

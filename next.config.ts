@@ -4,7 +4,7 @@ import path from "path";
 const nextConfig: NextConfig = {
   sassOptions: {
     includePaths: [path.join(__dirname, 'styles')],
-    silenceDeprecations: ['legacy-js-api', 'import', 'if-function', 'global-builtin', 'mixed-decls', 'color-functions'],
+    silenceDeprecations: ['legacy-js-api', 'import', 'if-function', 'global-builtin', 'color-functions'],
   },
   images: {
     remotePatterns: [
