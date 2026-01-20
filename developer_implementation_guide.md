@@ -108,7 +108,7 @@ interface IUser {
 **สร้างทั้งหมด 8 models**:
 - [x] User
 - [x] Zone (ดึงข้อมูลพื้นฐาน)
-- [x] Lock (ดึงข้อมูลพื้นฐาน)
+- [x] Lock (เพิ่มฟิลด์ description และนำ features ออกเพื่อลดความซ้ำซ้อน)
 - [ ] Booking
 - [ ] Payment
 - [ ] InterestList
@@ -288,7 +288,7 @@ export default function LoginForm() {
 - [x] Separate Admin Login UI (Thai)
 - [x] Staff Management (List & Create)
 - [x] Admin Dashboard (Basic Stats)
-- [ ] Lock CRUD UI
+- [ ] Lock CRUD UI (รวมช่องรายละเอียด Description)
 - [ ] Zone CRUD UI
 - [ ] Image upload to Cloudinary (Integration)
 

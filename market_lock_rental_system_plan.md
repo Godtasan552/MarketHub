@@ -712,10 +712,10 @@ $enable-rounded: true;
     weekly: Number,
     monthly: Number
   },
+  description: String,
   images: [String], // Cloudinary URLs
   status: String (enum: ['available', 'booked', 'rented', 'maintenance']), 
   // Note: Future plan is to remove 'booked' status and calculate availability from Booking collection
-  features: [String], // e.g., ['covered', 'electricity', 'water']
   isActive: Boolean,
   createdAt: Date,
   updatedAt: Date
