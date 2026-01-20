@@ -1195,6 +1195,10 @@ async function autoUnban() {
 
 **Package ที่ต้องติดตั้ง:**
 ```bash
+# สำหรับผู้ที่ Clone โปรเจกต์ไปใหม่ (ติดตั้งทั้งหมด)
+npm install
+
+# หรือติดตั้งเฉพาะส่วนที่จำเป็น
 npm install bootstrap react-bootstrap sass bootstrap-icons
 npm install --save-dev @types/react-bootstrap
 ```
