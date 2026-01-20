@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "seed-admin": "tsx scripts/seed-admin.ts",
+    "seed-market-data": "tsx scripts/seed-market-data.ts",
     "test": "vitest"
   },
   "dependencies": {

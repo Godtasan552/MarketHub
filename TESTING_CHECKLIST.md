@@ -16,12 +16,15 @@ Before deploying the complete system, we must ensure all core functionalities wo
 - [ ] **Status Badge**: Locks display correct status badges (Available/Booked/Rented).
 
 ## 3. Engagement Features (New)
-- [ ] **Bookmark Toggle**: Clicking heart icon toggles state immediately.
-- [ ] **Favorites List**: `/bookmarks` page shows *only* bookmarked items.
-- [ ] **Filter Favorites**: "Show Favorites Only" switch in browsing page works.
+- [ ] **Bookmark Toggle**: Clicking bookmark icon toggles state immediately.
+- [ ] **Bookmarks List**: `/bookmarks` page shows *only* bookmarked items.
+- [ ] **Filter Bookmarks**: Search, Zone, and Status filters in `/bookmarks` work.
+- [ ] **Filter Favorites View**: "ที่บันทึกไว้" filter in `/locks` page works.
 - [ ] **Queue Join**: Can join queue for a "Booked" lock.
 - [ ] **Queue Status**: Shows correct position (e.g., "Queue: 1").
-- [ ] **Queue Leave**: Can leave queue successfully.
+- [ ] **Queue Leave**: Can leave queue successfully from lock detail.
+- [ ] **My Queues Page**: `/my-queues` shows all active queues with correct order.
+- [ ] **My Queues Cancellation**: Can leave any queue from the management page.
 
 ## 4. Booking Flow & Queue Reservation (Updated)
 - [ ] **Standard Booking**: Can book an 'Available' lock normally.
@@ -29,6 +32,8 @@ Before deploying the complete system, we must ensure all core functionalities wo
 - [ ] **Exclusive Right**: Only the 'Reserved' user can see the "Book Now" button; others see "Reserved (Queue)".
 - [ ] **Booking Block**: Non-reserved users are blocked from booking via API (403 Forbidden).
 - [ ] **Time Limit**: Reservation expires after 2 hours (UI shows countdown).
+- [ ] **User Cancellation**: User can cancel a "Pending Payment" or "Pending Verification" booking.
+- [ ] **Cancellation Cleanup**: Cancelled booking releases the lock and creates AuditLog.
 
 ## 5. Payment & Verification
 - [ ] **QR Code**: QR code generated/displayed for payment.
@@ -42,6 +47,8 @@ Before deploying the complete system, we must ensure all core functionalities wo
 - [ ] **Manage Locks**: Can Add/Edit/Disable a lock.
 - [ ] **Manage Zones**: Can Create/Update zones.
 - [ ] **Verify Payments**: List shows pending payments. Approve/Reject actions work.
+- [ ] **Row Navigation**: Clicking anywhere on the payment table row opens the verification modal.
+- [ ] **Seed Data**: `npm run seed-market-data` generates 4 zones with 20+ locks and various pricing.
 
 ## 7. System & Cron
 - [ ] **Auto-Cancel**: Run localized test of `cancel-expired-bookings`. Expired pending bookings should cancel.

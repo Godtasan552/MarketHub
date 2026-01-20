@@ -98,17 +98,17 @@ export default function AdminBookingsPage() {
         </Button>
       </div>
 
-      <Card className="border-0 shadow-sm mb-4">
-        <Card.Body className="p-3">
+      <Card className="border shadow-sm mb-4 border-start-0 border-top-0 border-bottom-0 border-end-0" style={{ borderLeft: '4px solid var(--bs-primary)', boxShadow: '0 0.5rem 1rem rgba(0, 0, 0, 0.08)' }}>
+        <Card.Body className="p-3 border rounded shadow-sm">
           <Row className="g-3">
             <Col md={8}>
-              <InputGroup>
-                <InputGroup.Text className="bg-white border-end-0">
+              <InputGroup className="border rounded overflow-hidden">
+                <InputGroup.Text className="bg-light border-0 border-end">
                   <i className="bi bi-search text-muted"></i>
                 </InputGroup.Text>
                 <Form.Control
                   placeholder="ค้นหาชื่อผู้จอง, อีเมล หรือรหัสล็อก..."
-                  className="border-start-0 ps-0"
+                  className="bg-light border-0 ps-2"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -118,6 +118,7 @@ export default function AdminBookingsPage() {
               <Form.Select 
                 value={statusFilter} 
                 onChange={(e) => setStatusFilter(e.target.value)}
+                className="bg-light border shadow-none"
               >
                 <option value="">ทุกสถานะ</option>
                 <option value="pending_payment">รอชำระเงิน</option>

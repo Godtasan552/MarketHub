@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Badge, Button, Spinner } from 'react-bootstrap';
+import { Container, Row, Col, Card, Badge, Button, Spinner, Form, InputGroup } from 'react-bootstrap';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -22,9 +22,28 @@ interface Lock {
 
 export default function BookmarksPage() {
   const [locks, setLocks] = useState<Lock[]>([]);
+  const [zones, setZones] = useState<{_id: string, name: string}[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Filters
+  const [selectedZone, setSelectedZone] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+
   const router = useRouter();
   const { data: session, status } = useSession();
+
+  const fetchZones = async () => {
+    try {
+      const res = await fetch('/api/admin/zones');
+      if (res.ok) {
+        const data = await res.json();
+        setZones(data);
+      }
+    } catch (e) {
+      console.error('Failed to fetch zones', e);
+    }
+  };
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -80,8 +99,18 @@ export default function BookmarksPage() {
   useEffect(() => {
     if (session) {
       fetchBookmarks();
+      fetchZones();
     }
   }, [session]);
+
+  const displayedLocks = locks.filter(lock => {
+    const matchesSearch = lock.lockNumber.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          lock.zone?.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesZone = !selectedZone || lock.zone?._id === selectedZone;
+    const matchesStatus = !statusFilter || lock.status === statusFilter;
+    
+    return matchesSearch && matchesZone && matchesStatus;
+  });
 
   if (status === 'loading' || loading) {
     return (
@@ -116,6 +145,51 @@ export default function BookmarksPage() {
         </LinkAny>
       </div>
 
+      {locks.length > 0 && (
+        <Card className="border shadow-sm mb-4 border-start-0 border-top-0 border-bottom-0 border-end-0" style={{ borderLeft: '4px solid var(--bs-primary)', boxShadow: '0 0.5rem 1rem rgba(0, 0, 0, 0.08)' }}>
+          <Card.Body className="p-3 border rounded shadow-sm">
+            <Row className="g-2">
+              <Col xs={12} md={5}>
+                <InputGroup size="sm" className="border rounded overflow-hidden">
+                  <InputGroup.Text className="bg-light border-0 border-end"><i className="bi bi-search text-muted"></i></InputGroup.Text>
+                  <Form.Control 
+                    placeholder="ค้นหารหัสล็อก หรือชื่อโซน..." 
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="bg-light border-0 shadow-none fw-medium"
+                  />
+                </InputGroup>
+              </Col>
+              <Col xs={6} md={3}>
+                <Form.Select 
+                  size="sm"
+                  value={selectedZone}
+                  onChange={(e) => setSelectedZone(e.target.value)}
+                  className="bg-light border rounded shadow-none fw-medium"
+                >
+                  <option value="">ทุกโซน</option>
+                  {zones.map(z => <option key={z._id} value={z._id}>{z.name}</option>)}
+                </Form.Select>
+              </Col>
+              <Col xs={6} md={4}>
+                <Form.Select 
+                  size="sm"
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="bg-light border rounded shadow-none fw-medium"
+                >
+                  <option value="">ทุกสถานะ</option>
+                  <option value="available">ว่าง</option>
+                  <option value="booked">จองแล้ว</option>
+                  <option value="rented">เช่าแล้ว</option>
+                  <option value="maintenance">ปิดปรับปรุง</option>
+                </Form.Select>
+              </Col>
+            </Row>
+          </Card.Body>
+        </Card>
+      )}
+
       {locks.length === 0 ? (
         <div className="text-center py-5 bg-white rounded shadow-sm">
           <i className="bi bi-bookmark display-1 text-secondary mb-3 d-block opacity-25"></i>
@@ -125,9 +199,20 @@ export default function BookmarksPage() {
             ไปเลือกดูและจองล็อก
           </LinkAny>
         </div>
+      ) : displayedLocks.length === 0 ? (
+        <div className="text-center py-5 bg-white rounded shadow-sm border">
+          <i className="bi bi-search display-3 text-light mb-3 d-block"></i>
+          <h4 className="text-muted">ไม่พบข้อมูลที่ตรงกับตัวกรอง</h4>
+          <Button 
+            variant="link" 
+            onClick={() => { setSearchTerm(''); setSelectedZone(''); setStatusFilter(''); }}
+          >
+            ล้างตัวกรองทั้งหมด
+          </Button>
+        </div>
       ) : (
         <Row xs={1} md={2} xl={3} className="g-4">
-          {locks.map((lock) => (
+          {displayedLocks.map((lock) => (
             <Col key={lock._id}>
               <Card className="border-0 shadow-sm h-100 overflow-hidden hover-lift card-hover transition-300 position-relative">
                 <button

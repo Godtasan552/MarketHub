@@ -364,11 +364,11 @@ export default function BookingDetailPage() {
                 <Row className="g-3">
                   <Col sm={6}>
                     <div className="small text-muted mb-1">รหัสล็อก</div>
-                    <div className="fw-bold h5">ล็อก {booking.lock.lockNumber}</div>
+                    <div className="fw-bold h5">ล็อก {booking.lock?.lockNumber || 'ไม่ระบุ'}</div>
                   </Col>
                   <Col sm={6}>
                     <div className="small text-muted mb-1">โซน</div>
-                    <div className="fw-bold h5 text-primary">{booking.lock.zone.name}</div>
+                    <div className="fw-bold h5 text-primary">{booking.lock?.zone?.name || 'ไม่ระบุโซน'}</div>
                   </Col>
                   <Col sm={6}>
                     <div className="small text-muted mb-1">ระยะเวลาเช่า</div>

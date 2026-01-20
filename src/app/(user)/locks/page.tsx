@@ -158,13 +158,13 @@ export default function LockBrowsingPage() {
       </div>
 
       {/* Top Filter Bar */}
-      <Card className="border-0 shadow-sm mb-4">
-        <Card.Body className="p-3">
+      <Card className="border shadow-sm mb-4 border-start-0 border-top-0 border-bottom-0 border-end-0" style={{ borderLeft: '4px solid var(--bs-primary) !important', boxShadow: '0 0.5rem 1rem rgba(0, 0, 0, 0.08)' }}>
+        <Card.Body className="p-3 border rounded shadow-sm">
           <Row className="g-2 align-items-center">
             {/* Zone Filter */}
             <Col xs={12} md={3} lg={2}>
-              <InputGroup size="sm">
-                <InputGroup.Text className="bg-light border-0"><i className="bi bi-geo-alt text-muted"></i></InputGroup.Text>
+              <InputGroup size="sm" className="border rounded overflow-hidden shadow-none">
+                <InputGroup.Text className="bg-light border-0 border-end"><i className="bi bi-geo-alt text-muted"></i></InputGroup.Text>
                 <Form.Select 
                   value={selectedZone} 
                   onChange={(e) => setSelectedZone(e.target.value)}
@@ -178,8 +178,8 @@ export default function LockBrowsingPage() {
 
             {/* Status Filter */}
             <Col xs={12} md={3} lg={2}>
-              <InputGroup size="sm">
-                <InputGroup.Text className="bg-light border-0"><i className="bi bi-info-circle text-muted"></i></InputGroup.Text>
+              <InputGroup size="sm" className="border rounded overflow-hidden shadow-none">
+                <InputGroup.Text className="bg-light border-0 border-end"><i className="bi bi-info-circle text-muted"></i></InputGroup.Text>
                 <Form.Select 
                   value={statusFilter} 
                   onChange={(e) => setStatusFilter(e.target.value)}
@@ -196,8 +196,8 @@ export default function LockBrowsingPage() {
 
             {/* Price Range */}
             <Col xs={12} md={4} lg={3}>
-              <InputGroup size="sm">
-                <InputGroup.Text className="bg-light border-0">฿</InputGroup.Text>
+              <InputGroup size="sm" className="border rounded overflow-hidden">
+                <InputGroup.Text className="bg-light border-0 border-end">฿</InputGroup.Text>
                 <Form.Control 
                   placeholder="ต่ำสุด" 
                   type="number" 
@@ -205,7 +205,7 @@ export default function LockBrowsingPage() {
                   value={priceRange.min}
                   onChange={(e) => setPriceRange(prev => ({ ...prev, min: e.target.value }))}
                 />
-                <InputGroup.Text className="bg-light border-0 px-1">-</InputGroup.Text>
+                <InputGroup.Text className="bg-light border-0 px-1 border-start border-end">-</InputGroup.Text>
                 <Form.Control 
                   placeholder="สูงสุด" 
                   type="number" 
@@ -219,9 +219,9 @@ export default function LockBrowsingPage() {
             {/* Favorites Toggle */}
             <Col xs={6} md={2} lg={2}>
               <Button 
-                variant={showFavoritesOnly ? "danger" : "light"}
+                variant={showFavoritesOnly ? "danger" : "outline-secondary"}
                 size="sm"
-                className={`w-100 fw-medium d-flex align-items-center justify-content-center gap-2 ${showFavoritesOnly ? '' : 'text-muted'}`}
+                className={`w-100 fw-medium d-flex align-items-center justify-content-center gap-2 border-secondary-subtle ${showFavoritesOnly ? '' : 'text-muted bg-light'}`}
                 onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
               >
                 <i className={`bi ${showFavoritesOnly ? 'bi-bookmark-fill' : 'bi-bookmark'}`}></i>

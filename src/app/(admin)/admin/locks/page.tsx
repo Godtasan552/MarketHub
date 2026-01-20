@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Container, Row, Col, Button, Modal, Spinner, Form, InputGroup } from 'react-bootstrap';
+import { Container, Row, Col, Button, Modal, Spinner, Form, InputGroup, Card } from 'react-bootstrap';
 import LockList, { Lock as LockListType } from '@/components/admin/LockList';
 import LockForm from '@/components/admin/LockForm';
 import LockDetail from '@/components/admin/LockDetail';
@@ -120,22 +120,28 @@ export default function LockManagementPage() {
         </Button>
       </div>
 
-      <Row className="mb-4">
-        <Col md={4}>
-            <Form onSubmit={handleSearch}>
-                <InputGroup>
-                    <Form.Control
-                        placeholder="ค้นหาด้วยรหัสล็อก..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                    <Button variant="outline-secondary" type="submit">
-                        <i className="bi bi-search"></i>
-                    </Button>
-                </InputGroup>
-            </Form>
-        </Col>
-      </Row>
+      <Card className="border shadow-sm mb-4 border-start-0 border-top-0 border-bottom-0 border-end-0" style={{ borderLeft: '4px solid var(--bs-primary)', boxShadow: '0 0.5rem 1rem rgba(0, 0, 0, 0.08)' }}>
+        <Card.Body className="p-3 border rounded shadow-sm">
+          <Row className="align-items-center">
+            <Col md={4}>
+                <Form onSubmit={handleSearch}>
+                    <InputGroup size="sm" className="border rounded overflow-hidden">
+                        <InputGroup.Text className="bg-light border-0 border-end"><i className="bi bi-search text-muted"></i></InputGroup.Text>
+                        <Form.Control
+                            placeholder="ค้นหาด้วยรหัสล็อก..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="bg-light border-0 shadow-none fw-medium"
+                        />
+                        <Button variant="primary" type="submit" className="border-0">
+                            ค้นหา
+                        </Button>
+                    </InputGroup>
+                </Form>
+            </Col>
+          </Row>
+        </Card.Body>
+      </Card>
 
       {loading ? (
         <div className="text-center py-5">
