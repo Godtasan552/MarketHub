@@ -20,14 +20,18 @@ export const authConfig = {
       const isOnAdminPanel = nextUrl.pathname.startsWith('/admin');
       const isOnAdminLogin = nextUrl.pathname === '/admin/login';
 
+      console.log(`[Auth Middleware] Path: ${nextUrl.pathname}, LoggedIn: ${isLoggedIn}, Role: ${role}, CanAccessAdmin: ${canAccessAdmin}`);
+
       // 1. Admin Login Page Logic
       if (isOnAdminLogin) {
         if (isLoggedIn) {
             // If already logged in as someone who can access admin panel, go to dashboard
             if (canAccessAdmin) {
+                console.log('[Auth Middleware] Logged in admin on login page, redirecting to dashboard');
                 return Response.redirect(new URL('/admin/dashboard', nextUrl));
             }
             // If logged in as regular user, redirect to home
+            console.log('[Auth Middleware] Regular user on admin login page, redirecting to home');
             return Response.redirect(new URL('/', nextUrl));
         }
         return true; 
@@ -37,12 +41,15 @@ export const authConfig = {
       if (isOnAdminPanel) {
         if (!isLoggedIn) {
             // Not logged in -> Redirect to Admin Login
+            console.log('[Auth Middleware] Not logged in, redirecting to admin login');
             return Response.redirect(new URL('/admin/login', nextUrl));
         }
         if (!canAccessAdmin) {
             // Logged in but no permission -> Redirect to Home
+            console.log(`[Auth Middleware] Forbidden role ${role}, redirecting to home`);
             return Response.redirect(new URL('/', nextUrl));
         }
+        console.log('[Auth Middleware] Admin access granted');
         return true;
       }
 
