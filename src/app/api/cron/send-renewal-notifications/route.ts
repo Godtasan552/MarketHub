@@ -3,10 +3,13 @@ import connectDB from '@/lib/db/mongoose';
 import Booking from '@/models/Booking';
 import { NotificationService } from '@/lib/notification/service';
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    // Cron authentication (Optional: Check header)
-    // if (req.headers.get('Authorization') !== `Bearer ${process.env.CRON_SECRET}`) ...
+    // Cron authentication
+    const authHeader = req.headers.get('Authorization');
+    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
     await connectDB();
     const now = Date.now();

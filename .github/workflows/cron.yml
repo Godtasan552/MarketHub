@@ -1,0 +1,21 @@
+name: System Cron Triggers
+
+on:
+  schedule:
+    # Run every 15 minutes
+    - cron: '*/15 * * * *'
+  workflow_dispatch: # Allow manual triggering
+
+jobs:
+  trigger-crons:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Cancel Expired Bookings
+        run: |
+          curl -X GET "https://markethub-pi.vercel.app/api/cron/cancel-expired-bookings" \
+          -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
+
+      - name: Trigger Renewal Notifications
+        run: |
+          curl -X GET "https://markethub-pi.vercel.app/api/cron/send-renewal-notifications" \
+          -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"

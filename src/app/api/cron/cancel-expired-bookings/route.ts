@@ -3,8 +3,14 @@ import connectDB from '@/lib/db/mongoose';
 import Booking from '@/models/Booking';
 import { processLockAvailability } from '@/lib/queue-processor';
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    // Cron authentication
+    const authHeader = req.headers.get('Authorization');
+    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     await connectDB();
     const now = new Date();
 

@@ -1,6 +1,5 @@
 import connectDB from '@/lib/db/mongoose';
 import Notification from '@/models/Notification';
-import { sendBookingCreatedEmail, sendBookingApprovedEmail } from '@/lib/email/send-email';
 
 // Define Notification Types
 export type NotificationType = 
@@ -47,10 +46,10 @@ export const NotificationService = {
         await this.createInAppNotification(userId, type, data);
       }
 
-      // 2. Send Email (Conditional based on policy)
-      if (this.shouldSendEmail(type) && data.userEmail) {
-        await this.sendEmailNotification(type, data);
-      }
+// 2. Send Email (Disabled)
+      // if (this.shouldSendEmail(type) && data.userEmail) {
+      //   await this.sendEmailNotification(type, data);
+      // }
     } catch (error) {
       console.error('NotificationService Error:', error);
       // Don't throw error to prevent blocking the main flow
@@ -132,56 +131,7 @@ export const NotificationService = {
     getNotificationEmitter().emit(NOTIFICATION_EVENT, { userId, notification });
   },
 
-  /**
-   * Policy: Which events trigger emails?
-   */
-  shouldSendEmail(type: NotificationType): boolean {
-    const emailPolicy: Record<NotificationType, boolean> = {
-      booking_created: true,
-      payment_uploaded: false,
-      booking_approved: true,
-      booking_rejected: true,
-      booking_cancelled: true,
-      booking_expiring: true,
-      queue_cancelled: false, // In-app is enough for queue cancel
-      system: false
-    };
-    return emailPolicy[type] || false;
-  },
-
-  /**
-   * Dispatch email using existing utility
-   */
-  async sendEmailNotification(type: NotificationType, data: NotificationData) {
-    if (!data.userEmail) return;
-
-    switch (type) {
-      case 'booking_created':
-        if (data.lockNumber && data.bookingId && data.paymentDeadline && data.totalAmount) {
-             await sendBookingCreatedEmail({
-                userEmail: data.userEmail,
-                lockNumber: data.lockNumber,
-                bookingId: data.bookingId,
-                paymentDeadline: data.paymentDeadline,
-                totalAmount: data.totalAmount
-             });
-        }
-        break;
-
-      case 'booking_approved':
-         if (data.userName && data.lockNumber && data.bookingId && data.startDate && data.endDate) {
-             await sendBookingApprovedEmail({
-                 userEmail: data.userEmail,
-                 userName: data.userName,
-                 lockNumber: data.lockNumber,
-                 bookingId: data.bookingId,
-                 startDate: data.startDate,
-                 endDate: data.endDate
-             });
-         }
-         break;
-      
-      // Future: Implement other email templates (rejected, expiring, cancelled)
-    }
+  shouldSendEmail(): boolean {
+    return false;
   }
 };

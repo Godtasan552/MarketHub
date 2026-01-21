@@ -1,12 +1,5 @@
 {
-  "crons": [
-    {
-      "path": "/api/cron/cancel-expired-bookings",
-      "schedule": "*/15 * * * *"
-    },
-    {
-      "path": "/api/cron/send-renewal-notifications",
-      "schedule": "0 * * * *"
-    }
-  ]
+  "github": {
+    "silent": true
+  }
 }
