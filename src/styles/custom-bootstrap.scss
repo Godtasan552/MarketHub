@@ -1,20 +1,21 @@
-// Override Bootstrap variables ก่อน import
-$primary: #0d6efd;        // สีหลัก
-$secondary: #6c757d;      // สีรอง
-$success: #198754;        // สีสำเร็จ
-$info: #0dcaf0;           // สีข้อมูล
-$warning: #ffc107;        // สีเตือน
-$danger: #dc3545;         // สีอันตราย
-$dark: #212529;           // สีเข้ม
-$light: #f8f9fa;          // สีอ่อน
+// Premium Emerald Theme Variables
+$primary: #10b981;        // Emerald 500
+$secondary: #64748b;      // Slate 500
+$success: #059669;        // Emerald 600
+$info: #0ea5e9;           // Sky 500
+$warning: #f59e0b;        // Amber 500
+$danger: #ef4444;         // Rose 500
+$dark: #1e293b;           // Slate 800
+$light: #f8fafc;          // Slate 50
+$white: #ffffff;
 
 // Font family
 $font-family-sans-serif: 'Inter', 'Noto Sans Thai', system-ui, -apple-system, sans-serif;
 
-// Border radius
-$border-radius: 0.5rem;
-$border-radius-sm: 0.25rem;
-$border-radius-lg: 0.75rem;
+// Premium UI Settings
+$border-radius: 0.75rem;
+$border-radius-sm: 0.375rem;
+$border-radius-lg: 1rem;
 
 // Spacing
 $spacer: 1rem;
@@ -22,27 +23,79 @@ $spacer: 1rem;
 // Import Bootstrap
 @import '../../node_modules/bootstrap/scss/bootstrap';
 
-// Custom classes
-.card-lock {
-  transition: transform 0.2s, box-shadow 0.2s;
+// --- Premium Global Utilities ---
+
+// Navbar active state styling
+.nav-link {
+  position: relative;
+  transition: all 0.2s ease;
   
-  &:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  &.active {
+    color: $primary !important;
+    font-weight: 700 !important;
+    
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: -5px;
+      left: 0.8rem;
+      right: 0.8rem;
+      height: 3px;
+      background-color: $primary;
+      border-radius: 10px;
+    }
+  }
+  
+  &:hover:not(.active) {
+    color: $primary !important;
+    opacity: 0.8;
   }
 }
 
+// Soft lifting effect
+.card-lift {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+  &:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+  }
+}
+
+// Glassmorphism effect
+.glass-panel {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+// Gradient background
+.bg-gradient-primary {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+// Custom badges
 .status-badge {
-  &.available { 
-    background-color: $success; 
-  }
-  &.booked { 
-    background-color: $warning; 
-  }
-  &.rented { 
-    background-color: $danger; 
-  }
-  &.expiring-soon { 
-    background-color: #fd7e14; // Orange
+  padding: 0.5em 1em;
+  font-weight: 600;
+  border-radius: 2rem;
+  
+  &.available { background-color: rgba($success, 0.1); color: $success; border: 1px solid rgba($success, 0.2); }
+  &.booked { background-color: rgba($warning, 0.1); color: $warning; border: 1px solid rgba($warning, 0.2); }
+  &.rented { background-color: rgba($danger, 0.1); color: $danger; border: 1px solid rgba($danger, 0.2); }
+  &.maintenance { background-color: rgba($secondary, 0.1); color: $secondary; border: 1px solid rgba($secondary, 0.2); }
+}
+
+// Global button styling
+.btn {
+  font-weight: 600;
+  padding: 0.5rem 1.5rem;
+  transition: all 0.2s ease;
+  
+  &-primary {
+    box-shadow: 0 4px 6px -1px rgba($primary, 0.2);
+    &:hover {
+      box-shadow: 0 10px 15px -3px rgba($primary, 0.3);
+    }
   }
 }
