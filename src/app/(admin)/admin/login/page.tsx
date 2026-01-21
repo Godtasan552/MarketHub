@@ -27,7 +27,6 @@ export default function AdminLoginPage() {
   const onSubmit = async (data: LoginFormData) => {
     setLoading(true);
     setError(null);
-    console.log('[Login Page] Submitting credentials for:', data.email);
     try {
       const result = await signIn('credentials', {
         email: data.email,
@@ -35,18 +34,17 @@ export default function AdminLoginPage() {
         redirect: false,
       });
 
-      console.log('[Login Page] SignIn result:', result);
-
       if (result?.error) {
         setError('อีเมลหรือรหัสผ่านไม่ถูกต้อง หรือคุณไม่มีสิทธิ์ผู้ดูแลระบบ');
       } else {
         // Successful login
-        console.log('[Login Page] Login success, pushing to dashboard');
+        // Check session role? Client-side session might strictly require a refresh or check.
+        // For now, redirect to dashboard, proxy will catch if not admin.
         router.push('/admin/dashboard');
         router.refresh();
       }
     } catch (err) {
-      console.error('[Login Page] Error during signIn:', err);
+      console.error(err);
       setError('เกิดข้อผิดพลาดในการเข้าสู่ระบบ');
     } finally {
       setLoading(false);
