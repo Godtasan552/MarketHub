@@ -53,10 +53,11 @@ const LOCK_POSITION_MAP: Record<string, { x: number; y: number }> = {
   'C-005': { x: 38, y: 51 }, 'C-006': { x: 22, y: 61 }, 'C-007': { x: 64, y: 53 }, 'C-008': { x: 50, y: 63 },
   'C-009': { x: 35, y: 72 }, 'C-010': { x: 73, y: 66 }, 'C-011': { x: 86, y: 40 }, 'C-012': { x: 72, y: 30 },
 
-  // Zone D: Fresh Produce (up to 16 stalls)
-  'D-001': { x: 20, y: 65 }, 'D-002': { x: 14, y: 23 }, 'D-003': { x: 44, y: 20 }, 'D-004': { x: 64, y: 18 },
-  'D-005': { x: 25, y: 45 }, 'D-006': { x: 40, y: 46 }, 'D-007': { x: 66, y: 44 }, 'D-008': { x: 80, y: 43 },
-  'D-009': { x: 35, y: 70 }, 'D-010': { x: 41, y: 72 }, 'D-011': { x: 60, y: 67 }, 'D-012': { x: 74, y: 70 },
+  // Zone D: Fresh Produce (aligned with isometric stalls)
+  'D-001': { x: 43, y: 23 }, 'D-002': { x: 65, y: 22 }, 
+  'D-003': { x: 28, y: 37 }, 'D-004': { x: 53, y: 39 }, 'D-005': { x: 83, y: 45 },
+  'D-006': { x: 16, y: 49 }, 'D-007': { x: 32, y: 55 }, 'D-008': { x: 47, y: 60 },
+  'D-009': { x: 68, y: 54 }, 'D-010': { x: 83, y: 57 }, 'D-011': { x: 27, y: 78 }, 'D-012': { x: 55, y: 88 },
 };
 
 const getLockPosition = (lockNumber: string, index: number, total: number) => {
