@@ -175,13 +175,13 @@ export default function AdminDashboard() {
                       tick={{ fill: '#999', fontSize: 12 }}
                     />
                     <Tooltip 
-                      formatter={(value: number | string) => [formatCurrency(Number(value) || 0), 'รายได้']}
-                      labelFormatter={(label: string | number) => new Date(label).toLocaleDateString('th-TH', { 
+                      formatter={(value: string | number | undefined) => [formatCurrency(Number(value) || 0), 'รายได้']}
+                      labelFormatter={(label: string | number | undefined) => label ? new Date(label).toLocaleDateString('th-TH', { 
                         weekday: 'long', 
                         year: 'numeric', 
                         month: 'long', 
                         day: 'numeric' 
-                      })}
+                      }) : ''}
                       contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
                     />
                     <Line 
@@ -226,7 +226,7 @@ export default function AdminDashboard() {
                       width={130}
                     />
                     <Tooltip 
-                      formatter={(value: number | string) => [`${value || 0} ล็อก`, 'ถูกจอง']}
+                      formatter={(value: string | number | undefined) => [`${value || 0} ล็อก`, 'ถูกจอง']}
                       contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
                     />
                     <Bar dataKey="occupied" radius={[0, 10, 10, 0]} barSize={24}>

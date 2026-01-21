@@ -851,13 +851,13 @@ npm install sass
 **สาเหตุ**: เวอร์ชันของ Sass ล่าสุด (1.80+) มีการเปลี่ยนแปลงการใช้งานฟังก์ชัน `if()`
 **วิธีแก้ไข**: ระบบได้ทำการปิดคำเตือนเหล่านี้ไว้ให้แล้วในไฟล์ `next.config.ts` ในส่วนของ `silenceDeprecations` หากยังพบคำเตือนอื่นๆ สามารถเพิ่มชื่อหัวข้อคำเตือนลงในลิสต์นั้นได้
 
-### 3. ปัญหา "Failed to fetch" หรือ Middleware error
+### 3. ปัญหา "Failed to fetch" หรือ Proxy error
 **อาการ**: เจอ Error `TypeError: Failed to fetch` เมื่อรันบน Next.js 16 (Turbopack)
 **สาเหตุ**: 
-  1. การเปลี่ยนชื่อไฟล์ `middleware.ts` เป็น `proxy.ts` อาจทำให้ Next Auth หรือระบบ Routing ของ Next.js หาไฟล์ไม่เจอในบางเวอร์ชัน 
+  1. การใช้ไฟล์ `middleware.ts` แบบเดิมอาจทำให้เกิดคำเตือนหรือข้อผิดพลาดใน Turbopack (แนะนำให้ใช้ `proxy.ts`)
   2. การจัดการ Transaction ใน API ที่ไม่สมบูรณ์ทำให้ Server คืนค่า Error 500 หรือปิด Connection กระทันหัน
 **วิธีแก้ไข**: 
-  - ระบบได้เปลี่ยนชื่อกลับมาเป็น `src/middleware.ts` เพื่อความเสถียรสูงสุด
+  - ระบบได้เปลี่ยนชื่อเป็น `src/proxy.ts` ตามมาตรฐานใหม่ของ Next.js 16
   - ตรวจสอบว่าได้ตั้งค่า `NEXTAUTH_URL` ใน `.env` ให้ตรงกับ URL ที่ใช้งานจริง (เช่น `http://localhost:3000`)
 
 ### 4. OCR ประมวลผลนาน (OCR reads file very long)

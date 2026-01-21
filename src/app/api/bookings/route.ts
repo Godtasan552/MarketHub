@@ -11,7 +11,7 @@ import { NotificationService } from '@/lib/notification/service';
 export async function POST(req: NextRequest) {
   try {
     const session = await auth();
-    // Note: session.user comes from auth middleware (inject via helper or auth())
+    // Note: session.user comes from auth proxy (inject via helper or auth())
     if (!session?.user) {
       return NextResponse.json({ error: 'กรุณาเข้าสู่ระบบ' }, { status: 401 });
     }

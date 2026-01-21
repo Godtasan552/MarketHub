@@ -39,7 +39,7 @@ export default function AdminLoginPage() {
       } else {
         // Successful login
         // Check session role? Client-side session might strictly require a refresh or check.
-        // For now, redirect to dashboard, middleware will catch if not admin.
+        // For now, redirect to dashboard, proxy will catch if not admin.
         router.push('/admin/dashboard');
         router.refresh();
       }

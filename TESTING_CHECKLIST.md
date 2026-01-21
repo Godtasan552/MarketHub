@@ -8,6 +8,7 @@ Before deploying the complete system, we must ensure all core functionalities wo
 - [ ] **Login**: User can login with correct credentials. Incorrect password handled gracefully.
 - [ ] **Session**: Session persists on refresh. User name displayed in navbar.
 - [ ] **Logout**: Logout clears session and redirects to home.
+- [ ] **Proxy Protection**: Accessing `/admin` without admin role redirects correctly (handled by `proxy.ts`).
 
 ## 2. Lock Browsing & Search
 - [ ] **Filters**: Filter by Zone works correctly.
@@ -50,7 +51,7 @@ Before deploying the complete system, we must ensure all core functionalities wo
 - [ ] **Verify Payments**: List shows pending payments. Approve/Reject actions work.
 - [ ] **Row Navigation**: Clicking anywhere on the payment table row opens the verification modal.
 - [ ] **Responsive Navigation**: Sidebar shows on Desktop; Navbar shows on Mobile.
-- [ ] **Dashboard Charts**: Zone names are not cut off; labels are readable.
+- [ ] **Dashboard Charts**: Zone names are not cut off; formatters handle undefined values safely.
 - [ ] **Zone Name Fix**: No "ไม่ระบุโซน" displayed in bookings table (Check API population).
 - [ ] **Emerald Theme**: Visual consistency across all admin pages.
 - [ ] **Seed Data**: `npm run seed-market-data` generates 4 zones with 20+ locks and various pricing.
