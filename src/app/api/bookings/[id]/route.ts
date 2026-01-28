@@ -15,7 +15,7 @@ export async function GET(
     }
 
     await connectDB();
-    
+
     // Booking should belong to the user
     const booking = await Booking.findOne({ _id: id, user: session.user.id })
       .populate({
@@ -51,18 +51,31 @@ export async function DELETE(
     const AuditLog = (await import('@/models/AuditLog')).default;
 
     await connectDB();
-    
+
     // Find booking and ensure it belongs to the user
     const booking = await Booking.findOne({ _id: id, user: session.user.id });
     if (!booking) {
       return NextResponse.json({ error: 'ไม่พบข้อมูลการจอง' }, { status: 404 });
     }
 
-    // Only allow cancellation if pending payment or pending verification
-    if (!['pending_payment', 'pending_verification'].includes(booking.status)) {
-      return NextResponse.json({ 
-        error: `ไม่สามารถยกเลิกการจองในสถานะ ${booking.status} ได้` 
+    // Allow cancellation if pending OR active (users can cancel advance bookings)
+    if (!['pending_payment', 'pending_verification', 'active'].includes(booking.status)) {
+      return NextResponse.json({
+        error: `ไม่สามารถยกเลิกการจองในสถานะ ${booking.status} ได้`
       }, { status: 400 });
+    }
+
+    // Special check for Active bookings: Can only cancel if not yet started
+    if (booking.status === 'active') {
+      const now = new Date();
+      const start = new Date(booking.startDate);
+      // If booking has already started (or is today/past)
+      if (now >= start) {
+        return NextResponse.json({
+          error: 'ไม่สามารถยกเลิกการเช่าที่เริ่มขึ้นแล้วหรือสิ้นสุดแล้วได้'
+        }, { status: 400 });
+      }
+      // TODO: Implement Refund Logic here (Credit Refund / Partial Refund) based on 48h policy
     }
 
     const dbSession = await mongoose.startSession();
@@ -85,14 +98,14 @@ export async function DELETE(
         action: 'BOOKING_CANCELLED',
         actorId: session.user.id,
         targetId: id,
-        details: { 
+        details: {
           lockId: booking.lock,
           prevStatus: booking.status
         }
       }], { session: dbSession });
 
       await dbSession.commitTransaction();
-      
+
       return NextResponse.json({ message: 'ยกเลิกการจองเรียบร้อยแล้ว' });
     } catch (err) {
       if (dbSession.inTransaction()) {

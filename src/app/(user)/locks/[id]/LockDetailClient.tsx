@@ -8,6 +8,7 @@ import { useSession } from 'next-auth/react';
 import NextLink from 'next/link';
 import CountdownTimer from '@/components/common/CountdownTimer';
 import { showAlert } from '@/lib/swal';
+import CalendarPicker from '@/components/locks/CalendarPicker';
 
 interface Lock {
   _id: string;
@@ -21,22 +22,23 @@ interface Lock {
   description?: string;
   reservedTo?: string; // or User object
   reservationExpiresAt?: string; // API string date
+  existingBookings?: Array<{ startDate: string; endDate: string }>;
 }
 
 export default function LockDetailClient() {
   const { id } = useParams();
   const router = useRouter();
   const { data: session } = useSession();
-  
+
   const [lock, setLock] = useState<Lock | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Booking Form State - Auto-set to today's date as requested
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [rentalType, setRentalType] = useState<'daily' | 'weekly' | 'monthly'>('daily');
   const [bookingLoading, setBookingLoading] = useState(false);
-  
+
   // Bookmark State
   const [isBookmarked, setIsBookmarked] = useState(false);
 
@@ -57,10 +59,10 @@ export default function LockDetailClient() {
 
   const handleToggleQueue = async () => {
     if (!session) {
-       router.push(`/login?callbackUrl=/locks/${id}`);
-       return;
+      router.push(`/login?callbackUrl=/locks/${id}`);
+      return;
     }
-    
+
     setQueueLoading(true);
     const action = queueInfo.inQueue ? 'leave' : 'join';
 
@@ -70,7 +72,7 @@ export default function LockDetailClient() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ lockId: id, action })
       });
-      
+
       if (res.ok) {
         await fetchQueueInfo();
         showAlert('สำเร็จ', action === 'join' ? 'เข้าคิวเรียบร้อยแล้ว' : 'ออกจากคิวเรียบร้อยแล้ว', 'success');
@@ -96,7 +98,7 @@ export default function LockDetailClient() {
         if (Array.isArray(bookmarks) && id && bookmarks.includes(id as string)) {
           setIsBookmarked(true);
         } else {
-            setIsBookmarked(false);
+          setIsBookmarked(false);
         }
       }
     } catch (error) {
@@ -153,9 +155,9 @@ export default function LockDetailClient() {
 
   useEffect(() => {
     if (id) {
-        fetchLock();
-        fetchBookmarkStatus();
-        fetchQueueInfo();
+      fetchLock();
+      fetchBookmarkStatus();
+      fetchQueueInfo();
     }
   }, [id, fetchLock, fetchBookmarkStatus, fetchQueueInfo]);
 
@@ -248,8 +250,8 @@ export default function LockDetailClient() {
               <div className="d-flex justify-content-between align-items-center mb-3">
                 <div className="d-flex align-items-center gap-2">
                   <h1 className="fw-bold mb-0">ล็อก {lock.lockNumber}</h1>
-                  <Button 
-                    variant="link" 
+                  <Button
+                    variant="link"
                     className="p-0 border-0 ms-2 text-decoration-none"
                     onClick={toggleBookmark}
                     title={isBookmarked ? 'ยกเลิกการบันทึก' : 'บันทึกข้อมูลล็อกนี้'}
@@ -257,24 +259,24 @@ export default function LockDetailClient() {
                     <i className={`bi ${isBookmarked ? 'bi-bookmark-fill text-primary' : 'bi-bookmark text-secondary'} fs-2`}></i>
                   </Button>
                 </div>
-                <Badge bg={lock.status === 'available' ? 'success' : 'secondary'} className="px-3 py-2 fs-6">
-                  {lock.status === 'available' ? 'ว่าง' : lock.status}
+                <Badge bg={lock.status === 'available' ? 'success' : 'warning'} className="px-3 py-2 fs-6">
+                  {lock.status === 'available' ? 'ว่าง' : 'มีคนจองแล้ว'}
                 </Badge>
               </div>
               <h5 className="text-primary mb-4">
                 <i className="bi bi-geo-alt me-2"></i>โซน: {lock.zone?.name}
               </h5>
-              
+
               <Row className="mb-4">
                 <Col md={12}>
                   <div className="p-3 bg-light rounded-3 border h-100">
                     <h6 className="small fw-bold text-uppercase text-muted mb-2">ข้อมูลพื้นที่</h6>
                     <div className="d-flex align-items-center mb-2">
-                       <i className="bi bi-aspect-ratio me-3 fs-4 text-primary"></i>
-                       <div>
-                          <div className="fw-bold fs-5">{lock.size.width} x {lock.size.length} {lock.size.unit}</div>
-                          <div className="small text-muted">พื้นที่ทั้งหมด {(lock.size.width * lock.size.length).toFixed(2)} {lock.size.unit === 'm' ? 'ตร.ม.' : lock.size.unit}</div>
-                       </div>
+                      <i className="bi bi-aspect-ratio me-3 fs-4 text-primary"></i>
+                      <div>
+                        <div className="fw-bold fs-5">{lock.size.width} x {lock.size.length} {lock.size.unit}</div>
+                        <div className="small text-muted">พื้นที่ทั้งหมด {(lock.size.width * lock.size.length).toFixed(2)} {lock.size.unit === 'm' ? 'ตร.ม.' : lock.size.unit}</div>
+                      </div>
                     </div>
                   </div>
                 </Col>
@@ -297,12 +299,12 @@ export default function LockDetailClient() {
           <Card className="border-0 shadow-sm sticky-top" style={{ top: '100px' }}>
             <Card.Body className="p-4">
               <h4 className="fw-bold mb-4">
-                {lock.status === 'available' || (lock.status === 'reserved' && lock.reservedTo === session?.user?.id) 
-                  ? 'จองพื้นที่ขายของ' 
+                {lock.status === 'available' || (lock.status === 'reserved' && lock.reservedTo === session?.user?.id)
+                  ? 'จองพื้นที่ขายของ'
                   : (lock.status === 'reserved' ? 'ล็อกนี้ติดจอง (คิว)' : 'สถานะการจอง')
                 }
               </h4>
-              
+
               <div className="bg-primary bg-opacity-10 p-3 rounded-3 mb-4 text-primary">
                 <div className="small mb-1">เริ่มต้นเพียง</div>
                 <div className="h2 fw-bold mb-0 text-primary">฿{lock.pricing.daily.toLocaleString()} <span className="small text-muted fw-normal">/วัน</span></div>
@@ -310,31 +312,31 @@ export default function LockDetailClient() {
 
               {/* Show Reservation countdown if reserved for me */}
               {lock.status === 'reserved' && lock.reservedTo === session?.user?.id && (
-                  <Alert variant="info" className="mb-4 border-0 shadow-sm bg-info bg-opacity-10 text-dark">
-                    <div className="d-flex align-items-center">
-                      <div className="bg-info bg-opacity-25 rounded-circle p-2 me-3">
-                        <i className="bi bi-clock-history fs-4 text-info"></i>
-                      </div>
-                      <div>
-                        <div className="fw-bold mb-1">ถึงคิวของคุณแล้ว!</div>
-                        <div className="small text-muted mb-2">กรุณาทำรายการภายในเวลาที่กำหนด</div>
-                        {lock.reservationExpiresAt && (
-                          <CountdownTimer 
-                            expiryDate={lock.reservationExpiresAt} 
-                            onExpire={() => fetchLock()}
-                          />
-                        )}
-                      </div>
+                <Alert variant="info" className="mb-4 border-0 shadow-sm bg-info bg-opacity-10 text-dark">
+                  <div className="d-flex align-items-center">
+                    <div className="bg-info bg-opacity-25 rounded-circle p-2 me-3">
+                      <i className="bi bi-clock-history fs-4 text-info"></i>
                     </div>
-                  </Alert>
+                    <div>
+                      <div className="fw-bold mb-1">ถึงคิวของคุณแล้ว!</div>
+                      <div className="small text-muted mb-2">กรุณาทำรายการภายในเวลาที่กำหนด</div>
+                      {lock.reservationExpiresAt && (
+                        <CountdownTimer
+                          expiryDate={lock.reservationExpiresAt}
+                          onExpire={() => fetchLock()}
+                        />
+                      )}
+                    </div>
+                  </div>
+                </Alert>
               )}
 
               <Form onSubmit={handleBooking}>
                 <Form.Group className="mb-3">
                   <Form.Label className="fw-bold">เลือกรูปแบบการเช่า</Form.Label>
                   <div className="d-grid gap-2">
-                    <Button 
-                      variant={rentalType === 'daily' ? 'primary' : 'outline-primary'} 
+                    <Button
+                      variant={rentalType === 'daily' ? 'primary' : 'outline-primary'}
                       onClick={() => setRentalType('daily')}
                       className="text-start px-3 py-2 rounded-3"
                     >
@@ -342,23 +344,23 @@ export default function LockDetailClient() {
                       รายวัน <span className="float-end fw-bold">฿{lock.pricing.daily}</span>
                     </Button>
                     {lock.pricing.weekly && (
-                      <Button 
-                        variant={rentalType === 'weekly' ? 'primary' : 'outline-primary'} 
+                      <Button
+                        variant={rentalType === 'weekly' ? 'primary' : 'outline-primary'}
                         onClick={() => setRentalType('weekly')}
                         className="text-start px-3 py-2 rounded-3"
                       >
-                         <i className={`bi bi-check-circle${rentalType === 'weekly' ? '-fill' : ''} me-2`}></i>
-                         รายสัปดาห์ <span className="float-end fw-bold">฿{lock.pricing.weekly}</span>
+                        <i className={`bi bi-check-circle${rentalType === 'weekly' ? '-fill' : ''} me-2`}></i>
+                        รายสัปดาห์ <span className="float-end fw-bold">฿{lock.pricing.weekly}</span>
                       </Button>
                     )}
                     {lock.pricing.monthly && (
-                      <Button 
-                        variant={rentalType === 'monthly' ? 'primary' : 'outline-primary'} 
+                      <Button
+                        variant={rentalType === 'monthly' ? 'primary' : 'outline-primary'}
                         onClick={() => setRentalType('monthly')}
                         className="text-start px-3 py-2 rounded-3"
                       >
-                         <i className={`bi bi-check-circle${rentalType === 'monthly' ? '-fill' : ''} me-2`}></i>
-                         รายเดือน <span className="float-end fw-bold">฿{lock.pricing.monthly}</span>
+                        <i className={`bi bi-check-circle${rentalType === 'monthly' ? '-fill' : ''} me-2`}></i>
+                        รายเดือน <span className="float-end fw-bold">฿{lock.pricing.monthly}</span>
                       </Button>
                     )}
                   </div>
@@ -366,31 +368,29 @@ export default function LockDetailClient() {
 
                 <Form.Group className="mb-4">
                   <Form.Label className="fw-bold">วันที่เริ่มเช่า</Form.Label>
-                  <Form.Control 
-                    type="date" 
-                    value={startDate}
-                    readOnly
-                    className="py-2 bg-light border-primary-subtle rounded-3"
-                    style={{ cursor: 'not-allowed' }}
-                    required
+                  <CalendarPicker
+                    startDate={startDate}
+                    onDateChange={setStartDate}
+                    existingBookings={lock.existingBookings || []}
+                    maxAdvanceDays={14}
                   />
-                  <Form.Text className="text-muted">
-                    <i className="bi bi-info-circle me-1"></i> ระบบจะเริ่มการจองนับจากวันที่ปัจจุบัน
+                  <Form.Text className="text-muted mt-2 d-block">
+                    <i className="bi bi-info-circle me-1"></i> สามารถจองล่วงหน้าได้สูงสุด 14 วัน
                   </Form.Text>
                 </Form.Group>
 
                 <div className="d-grid mb-3">
-                  <Button 
-                    variant="primary" 
-                    size="lg" 
-                    type="submit" 
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    type="submit"
                     className="fw-bold py-3 rounded-4 shadow-sm"
                     disabled={bookingLoading}
                   >
                     {bookingLoading ? (
                       <><Spinner animation="border" size="sm" className="me-2" /> กำลังประมวลผล...</>
                     ) : (
-                      'ยืนยันการจอง'
+                      lock.status === 'available' ? 'ยืนยันการจอง' : 'จองล่วงหน้า'
                     )}
                   </Button>
                 </div>
@@ -410,7 +410,7 @@ export default function LockDetailClient() {
                       ขณะนี้ล็อกไม่ว่างในเวลาปัจจุบัน คุณสามารถเข้าคิวเพื่อรับสิทธิ์เมื่อมีการยกเลิกหรือหมดสัญญา
                     </div>
                   </Alert>
-                  
+
                   <div className="bg-light rounded-4 p-3 mb-4 text-center border">
                     <div className="text-muted small mb-1">จำนวนคนรอคิวขณะนี้</div>
                     <div className="h2 fw-bold text-dark mb-0">{queueInfo.count} <span className="fs-6 text-muted fw-normal">คน</span></div>
@@ -419,13 +419,13 @@ export default function LockDetailClient() {
                   {queueInfo.inQueue ? (
                     <div className="text-center">
                       <div className="mb-3">
-                         <Badge bg="primary" className="p-3 rounded-pill mb-2">
-                            คุณคือคิวลำดับที่ {queueInfo.userPosition}
-                         </Badge>
+                        <Badge bg="primary" className="p-3 rounded-pill mb-2">
+                          คุณคือคิวลำดับที่ {queueInfo.userPosition}
+                        </Badge>
                       </div>
-                      <Button 
-                        variant="outline-danger" 
-                        className="w-100 rounded-pill" 
+                      <Button
+                        variant="outline-danger"
+                        className="w-100 rounded-pill"
                         onClick={handleToggleQueue}
                         disabled={queueLoading}
                       >
@@ -434,14 +434,14 @@ export default function LockDetailClient() {
                     </div>
                   ) : queueInfo.hasActiveBooking ? (
                     <div className="text-center">
-                       <Alert variant="success" className="border-0 bg-success bg-opacity-10 text-success mb-0 py-3 rounded-4">
-                          คุณมีรายการจอง/เช่าล็อกนี้อยู่แล้ว
-                       </Alert>
+                      <Alert variant="success" className="border-0 bg-success bg-opacity-10 text-success mb-0 py-3 rounded-4">
+                        คุณมีรายการจอง/เช่าล็อกนี้อยู่แล้ว
+                      </Alert>
                     </div>
                   ) : (
-                    <Button 
-                      variant="outline-primary" 
-                      className="w-100 fw-bold rounded-pill" 
+                    <Button
+                      variant="outline-primary"
+                      className="w-100 fw-bold rounded-pill"
                       onClick={handleToggleQueue}
                       disabled={queueLoading}
                     >
@@ -454,6 +454,6 @@ export default function LockDetailClient() {
           </Card>
         </Col>
       </Row>
-    </Container>
+    </Container >
   );
 }

@@ -19,10 +19,10 @@ export async function GET(req: NextRequest) {
 
     // Query for active locks only for public viewing
     const query: LockQuery = { isActive: true };
-    
+
     if (zone) query.zone = zone;
     if (status) query.status = status;
-    
+
     if (minPrice || maxPrice) {
       const dailyPrice: { $gte?: number; $lte?: number } = {};
       if (minPrice) dailyPrice.$gte = Math.max(0, Number(minPrice));
@@ -34,33 +34,39 @@ export async function GET(req: NextRequest) {
       .populate('zone', 'name description')
       .sort({ lockNumber: 1 });
 
-    // Handle date-based availability
+    // Handle date-based availability (Default to Today)
     const requestedDate = searchParams.get('date');
-    if (requestedDate) {
-      const targetDate = new Date(requestedDate);
-      targetDate.setHours(0,0,0,0);
-      const targetEnd = new Date(targetDate);
-      targetEnd.setHours(23, 59, 59, 999);
+    const targetDate = requestedDate ? new Date(requestedDate) : new Date();
 
-      const Booking = (await import('@/models/Booking')).default;
-      const overlappingBookings = await Booking.find({
-        status: { $in: ['pending_payment', 'pending_verification', 'active'] },
-        startDate: { $lte: targetEnd },
-        endDate: { $gte: targetDate }
-      }).select('lock');
+    targetDate.setHours(0, 0, 0, 0);
+    const targetEnd = new Date(targetDate);
+    targetEnd.setHours(23, 59, 59, 999);
 
-      const bookedLockIds = new Set(overlappingBookings.map(b => b.lock.toString()));
+    const Booking = (await import('@/models/Booking')).default;
+    const overlappingBookings = await Booking.find({
+      status: { $in: ['pending_payment', 'pending_verification', 'active'] },
+      startDate: { $lte: targetEnd },
+      endDate: { $gte: targetDate }
+    }).select('lock');
 
-      return NextResponse.json(locks.map(lock => {
-        const lockObj = lock.toObject();
-        if (bookedLockIds.has(lock._id.toString()) && lockObj.status === 'available') {
-          lockObj.status = 'booked';
-        }
-        return lockObj;
-      }));
-    }
+    const bookedLockIds = new Set(overlappingBookings.map(b => b.lock.toString()));
 
-    return NextResponse.json(locks);
+    return NextResponse.json(locks.map(lock => {
+      const lockObj = lock.toObject();
+
+      // Reset temporal statuses (booked/rented) to available first
+      // unless it's permanently closed (maintenance)
+      if (lockObj.status !== 'maintenance') {
+        lockObj.status = 'available';
+      }
+
+      if (bookedLockIds.has(lock._id.toString()) && lockObj.status === 'available') {
+        lockObj.status = 'booked';
+      }
+      return lockObj;
+    }));
+
+
   } catch (error) {
     console.error('Error fetching public locks:', error);
     return NextResponse.json({ error: 'ไม่สามารถดึงข้อมูลล็อกได้' }, { status: 500 });
