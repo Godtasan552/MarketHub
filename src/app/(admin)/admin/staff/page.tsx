@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Container, Table, Button, Modal, Form, Badge, Card, Alert } from 'react-bootstrap';
 import { useForm, FieldValues } from 'react-hook-form';
 import { showAlert } from '@/lib/swal';
+import * as XLSX from 'xlsx';
 
 interface Staff {
   _id: string;
@@ -66,6 +67,33 @@ export default function StaffManagementPage() {
     }
   };
 
+  const handleExportExcel = () => {
+    if (staff.length === 0) return;
+
+    const dataToExport = staff.map(s => ({
+      'ชื่อ-นามสกุล': s.name,
+      'อีเมล': s.email,
+      'บทบาท': s.role === 'admin' ? 'ผู้ดูแลระบบ (Admin)' : 'พนักงาน (Staff)',
+      'สถานะ': s.isActive ? 'ใช้งานปกติ (Active)' : 'ระงับการใช้งาน (Inactive)',
+      'วันที่สร้าง': new Date(s.createdAt).toLocaleString('th-TH'),
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'รายชื่อพนักงาน');
+
+    const maxWidths = [
+      { wch: 20 }, // Name
+      { wch: 25 }, // Email
+      { wch: 20 }, // Role
+      { wch: 20 }, // Status
+      { wch: 20 }, // Date
+    ];
+    worksheet['!cols'] = maxWidths;
+
+    XLSX.writeFile(workbook, `รายชื่อพนักงาน_MarketHub_${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
+
   return (
     <Container fluid>
       <div className="d-flex justify-content-between align-items-center mb-4">
@@ -73,10 +101,15 @@ export default function StaffManagementPage() {
           <h2 className="fw-bold mb-0">Staff Management</h2>
           <p className="text-muted">จัดการรายชื่อผู้เรียกดูและดูแลระบบ</p>
         </div>
-        <Button variant="primary" onClick={() => setShowModal(true)}>
-          <i className="bi bi-person-plus-fill me-2"></i>
-          เพิ่มพนักงานใหม่
-        </Button>
+        <div className="d-flex gap-2">
+          <Button variant="success" onClick={handleExportExcel} disabled={loading || staff.length === 0}>
+            <i className="bi bi-file-earmark-excel me-2"></i>ส่งออก Excel
+          </Button>
+          <Button variant="primary" onClick={() => setShowModal(true)}>
+            <i className="bi bi-person-plus-fill me-2"></i>
+            เพิ่มพนักงานใหม่
+          </Button>
+        </div>
       </div>
 
       {error && <Alert variant="danger">{error}</Alert>}
@@ -141,17 +174,17 @@ export default function StaffManagementPage() {
           <Modal.Body>
             <Form.Group className="mb-3">
               <Form.Label>ชื่อ-นามสกุล</Form.Label>
-              <Form.Control 
-                type="text" 
-                placeholder="สมชาย ใจดี" 
+              <Form.Control
+                type="text"
+                placeholder="สมชาย ใจดี"
                 {...register('name', { required: 'กรุณาระบุชื่อ' })}
                 isInvalid={!!errors.name}
               />
             </Form.Group>
             <Form.Group className="mb-3">
               <Form.Label>อีเมล</Form.Label>
-              <Form.Control 
-                type="email" 
+              <Form.Control
+                type="email"
                 placeholder="staff@example.com"
                 {...register('email', { required: 'กรุณาระบุอีเมล' })}
                 isInvalid={!!errors.email}
@@ -159,8 +192,8 @@ export default function StaffManagementPage() {
             </Form.Group>
             <Form.Group className="mb-3">
               <Form.Label>รหัสผ่าน</Form.Label>
-              <Form.Control 
-                type="password" 
+              <Form.Control
+                type="password"
                 placeholder="••••••••"
                 {...register('password', { required: 'กรุณาระบุรหัสผ่าน', minLength: 8 })}
                 isInvalid={!!errors.password}

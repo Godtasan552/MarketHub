@@ -7,6 +7,7 @@ import LockForm from '@/components/admin/LockForm';
 import LockDetail from '@/components/admin/LockDetail';
 import { LockFormData } from '@/lib/validations/lock';
 import { showAlert, showConfirm } from '@/lib/swal';
+import * as XLSX from 'xlsx';
 
 interface Lock extends Omit<LockFormData, 'zone'> {
   _id: string;
@@ -22,7 +23,7 @@ export default function LockManagementPage() {
   const [editingLock, setEditingLock] = useState<Lock | null>(null);
   const [viewingLock, setViewingLock] = useState<LockListType | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  
+
   // Filters
   const [zoneFilter, setZoneFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -35,7 +36,7 @@ export default function LockManagementPage() {
       if (searchTerm) params.append('search', searchTerm);
       if (zoneFilter) params.append('zone', zoneFilter);
       if (statusFilter) params.append('status', statusFilter);
-      
+
       const qs = params.toString() ? `?${params.toString()}` : '';
       const res = await fetch(`/api/admin/locks${qs}`);
       if (res.ok) {
@@ -74,8 +75,8 @@ export default function LockManagementPage() {
   }, []);
 
   const handleSearch = (e: React.FormEvent) => {
-      e.preventDefault();
-      fetchLocks();
+    e.preventDefault();
+    fetchLocks();
   };
 
   const handleCreate = () => {
@@ -112,10 +113,10 @@ export default function LockManagementPage() {
 
   const handleSubmit = async (data: LockFormData) => {
     try {
-      const url = editingLock 
-        ? `/api/admin/locks/${editingLock._id}` 
+      const url = editingLock
+        ? `/api/admin/locks/${editingLock._id}`
         : '/api/admin/locks';
-        
+
       const method = editingLock ? 'PUT' : 'POST';
 
       const res = await fetch(url, {
@@ -140,42 +141,80 @@ export default function LockManagementPage() {
     }
   };
 
+  const handleExportExcel = () => {
+    if (locks.length === 0) return;
+
+    const dataToExport = locks.map(l => ({
+      'รหัสล็อก': l.lockNumber,
+      'โซน': typeof l.zone === 'string' ? l.zone : l.zone?.name || '-',
+      'ขนาด': `${l.size.width} x ${l.size.length} ${l.size.unit}`,
+      'สถานะ': l.status === 'available' ? 'ว่าง' : l.status === 'rented' ? 'ให้เช่าแล้ว' : 'ปิดปรับปรุง',
+      'ราคา/วัน': l.pricing.daily,
+      'ราคา/สัปดาห์': l.pricing.weekly || '-',
+      'ราคา/เดือน': l.pricing.monthly || '-',
+      'คุณสมบัติ': l.features?.join(', ') || '-',
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'ข้อมูลล็อก');
+
+    const maxWidths = [
+      { wch: 10 }, // Lock No
+      { wch: 20 }, // Zone
+      { wch: 15 }, // Size
+      { wch: 15 }, // Status
+      { wch: 12 }, // Daily
+      { wch: 12 }, // Weekly
+      { wch: 12 }, // Monthly
+      { wch: 30 }, // Features
+    ];
+    worksheet['!cols'] = maxWidths;
+
+    XLSX.writeFile(workbook, `ข้อมูลล็อก_MarketHub_${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
+
   return (
     <Container fluid>
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2 className="fw-bold mb-0">จัดการพื้นที่เช่า (ล็อกตลาด)</h2>
-        <Button variant="primary" onClick={handleCreate} className="fw-bold">
-          <i className="bi bi-plus-lg me-2"></i>
-          เพิ่มล็อกใหม่
-        </Button>
+        <div className="d-flex gap-2">
+          <Button variant="success" onClick={handleExportExcel} disabled={loading || locks.length === 0}>
+            <i className="bi bi-file-earmark-excel me-2"></i>ส่งออก Excel
+          </Button>
+          <Button variant="primary" onClick={handleCreate} className="fw-bold">
+            <i className="bi bi-plus-lg me-2"></i>
+            เพิ่มล็อกใหม่
+          </Button>
+        </div>
       </div>
 
       <Card className="border shadow-sm mb-4 border-start-0 border-top-0 border-bottom-0 border-end-0" style={{ borderLeft: '4px solid var(--bs-primary)', boxShadow: '0 0.5rem 1rem rgba(0, 0, 0, 0.08)' }}>
         <Card.Body className="p-3 border rounded shadow-sm">
           <Row className="g-3">
             <Col md={5}>
-                <Form onSubmit={handleSearch}>
-                    <InputGroup size="sm" className="border rounded overflow-hidden">
-                        <InputGroup.Text className="bg-light border-0 border-end"><i className="bi bi-search text-muted"></i></InputGroup.Text>
-                        <Form.Control
-                            placeholder="ค้นหาด้วยรหัสล็อก..."
-                            value={searchTerm}
-                            onChange={(e) => {
-                                const val = e.target.value.replace(/[^a-zA-Z0-9\s-]/g, '');
-                                setSearchTerm(val);
-                            }}
-                            className="bg-light border-0 shadow-none fw-medium"
-                        />
-                        <Button variant="primary" type="submit" className="border-0">
-                            ค้นหา
-                        </Button>
-                    </InputGroup>
-                </Form>
+              <Form onSubmit={handleSearch}>
+                <InputGroup size="sm" className="border rounded overflow-hidden">
+                  <InputGroup.Text className="bg-light border-0 border-end"><i className="bi bi-search text-muted"></i></InputGroup.Text>
+                  <Form.Control
+                    placeholder="ค้นหาด้วยรหัสล็อก..."
+                    value={searchTerm}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^a-zA-Z0-9\s-]/g, '');
+                      setSearchTerm(val);
+                    }}
+                    className="bg-light border-0 shadow-none fw-medium"
+                  />
+                  <Button variant="primary" type="submit" className="border-0">
+                    ค้นหา
+                  </Button>
+                </InputGroup>
+              </Form>
             </Col>
             <Col md={3}>
-              <Form.Select 
+              <Form.Select
                 size="sm"
-                value={zoneFilter} 
+                value={zoneFilter}
                 onChange={(e) => setZoneFilter(e.target.value)}
                 className="bg-light border shadow-none"
               >
@@ -186,9 +225,9 @@ export default function LockManagementPage() {
               </Form.Select>
             </Col>
             <Col md={2}>
-              <Form.Select 
+              <Form.Select
                 size="sm"
-                value={statusFilter} 
+                value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className="bg-light border shadow-none"
               >
@@ -199,8 +238,8 @@ export default function LockManagementPage() {
               </Form.Select>
             </Col>
             <Col md={2}>
-              <Button 
-                variant="outline-secondary" 
+              <Button
+                variant="outline-secondary"
                 size="sm"
                 className="w-100"
                 onClick={() => {
@@ -223,11 +262,11 @@ export default function LockManagementPage() {
           <p className="mt-2 text-muted">กำลังโหลดข้อมูล...</p>
         </div>
       ) : (
-        <LockList 
-          locks={locks} 
+        <LockList
+          locks={locks}
           onView={handleView}
-          onEdit={handleEdit} 
-          onDelete={handleDelete} 
+          onEdit={handleEdit}
+          onDelete={handleDelete}
         />
       )}
 
@@ -236,10 +275,10 @@ export default function LockManagementPage() {
           <Modal.Title className="fw-bold">{editingLock ? 'แก้ไขข้อมูลล็อก' : 'เพิ่มล็อกใหม่'}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <LockForm 
-            initialData={editingLock || undefined} 
-            onSubmit={handleSubmit} 
-            onCancel={() => setShowModal(false)} 
+          <LockForm
+            initialData={editingLock || undefined}
+            onSubmit={handleSubmit}
+            onCancel={() => setShowModal(false)}
           />
         </Modal.Body>
       </Modal>

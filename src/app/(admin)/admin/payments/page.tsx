@@ -4,11 +4,12 @@ import { useState, useEffect } from 'react';
 import { Container, Table, Badge, Button, Modal, Form, Spinner, Alert, Row, Col } from 'react-bootstrap';
 import Image from 'next/image';
 import { showAlert } from '@/lib/swal';
+import * as XLSX from 'xlsx';
 
 interface Payment {
   _id: string;
   user: { name: string; email: string };
-  booking: { 
+  booking: {
     lock: { lockNumber: string };
     startDate: string;
     endDate: string;
@@ -34,7 +35,7 @@ export default function AdminPaymentsPage() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Selection
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
   const [showModal, setShowModal] = useState(false);
@@ -62,7 +63,7 @@ export default function AdminPaymentsPage() {
 
   const handleAction = async (status: 'approved' | 'rejected') => {
     if (!selectedPayment) return;
-    
+
     setActionLoading(true);
     try {
       const res = await fetch(`/api/admin/payments/${selectedPayment._id}`, {
@@ -85,13 +86,60 @@ export default function AdminPaymentsPage() {
     }
   };
 
+  const handleExportExcel = () => {
+    if (payments.length === 0) return;
+
+    const dataToExport = payments.map(p => ({
+      'วันที่แจ้ง': new Date(p.createdAt).toLocaleString('th-TH'),
+      'ชื่อผู้แจ้ง': p.user?.name || '-',
+      'อีเมล': p.user?.email || '-',
+      'รหัสล็อก': p.booking?.lock?.lockNumber || '-',
+      'ยอดเงิน (บาท)': p.amount,
+      'สถานะ': p.status === 'pending' ? 'รอตรวจสอบ' : p.status === 'approved' ? 'อนุมัติแล้ว' : 'ปฏิเสธแล้ว',
+      'Ref No (OCR)': p.ocrResult?.referenceNumber || '-',
+      'จำนวนเงิน (OCR)': p.ocrResult?.amount || '-',
+      'วันที่โอน (OCR)': p.ocrResult?.date || '-',
+      'เวลาโอน (OCR)': p.ocrResult?.time || '-',
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'รายการชำระเงิน');
+
+    const maxWidths = [
+      { wch: 20 }, // Date
+      { wch: 20 }, // Name
+      { wch: 25 }, // Email
+      { wch: 10 }, // Lock
+      { wch: 15 }, // Amount
+      { wch: 15 }, // Status
+      { wch: 20 }, // Ref
+      { wch: 15 }, // OCR Amount
+      { wch: 15 }, // OCR Date
+      { wch: 10 }, // OCR Time
+    ];
+    worksheet['!cols'] = maxWidths;
+
+    XLSX.writeFile(workbook, `รายการชำระเงิน_MarketHub_${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
+
   return (
     <Container fluid className="py-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2 className="fw-bold m-0 text-dark">ตรวจสอบการชำระเงิน</h2>
-        <Button variant="outline-primary" onClick={fetchPayments} disabled={loading}>
-          <i className="bi bi-arrow-clockwise"></i> รีเฟรช
-        </Button>
+        <div className="d-flex gap-2">
+          <Button
+            variant="success"
+            onClick={handleExportExcel}
+            disabled={loading || payments.length === 0}
+            className="d-flex align-items-center"
+          >
+            <i className="bi bi-file-earmark-excel me-2"></i>ส่งออก Excel
+          </Button>
+          <Button variant="outline-primary" onClick={fetchPayments} disabled={loading} className="d-flex align-items-center">
+            <i className="bi bi-arrow-clockwise me-2"></i>รีเฟรช
+          </Button>
+        </div>
       </div>
 
       {loading ? (
@@ -120,8 +168,8 @@ export default function AdminPaymentsPage() {
             </thead>
             <tbody>
               {payments.map((p) => (
-                <tr 
-                  key={p._id} 
+                <tr
+                  key={p._id}
                   className="align-middle cursor-pointer"
                   style={{ cursor: 'pointer' }}
                   onClick={() => { setSelectedPayment(p); setShowModal(true); }}
@@ -134,30 +182,30 @@ export default function AdminPaymentsPage() {
                   <td>
                     <Badge bg="primary">ล็อก {p.booking?.lock?.lockNumber}</Badge>
                     <div className="small mt-1 text-muted">
-                        {new Date(p.booking.startDate).toLocaleDateString()} - {new Date(p.booking.endDate).toLocaleDateString()}
+                      {new Date(p.booking.startDate).toLocaleDateString()} - {new Date(p.booking.endDate).toLocaleDateString()}
                     </div>
                   </td>
                   <td className="text-end fw-bold">฿{p.amount.toLocaleString()}</td>
                   <td className="text-center">
-                    <Button 
-                      variant="link" 
+                    <Button
+                      variant="link"
                       className="p-0 text-decoration-none"
-                      onClick={(e) => { 
+                      onClick={(e) => {
                         e.stopPropagation();
-                        setSelectedPayment(p); 
-                        setShowModal(true); 
+                        setSelectedPayment(p);
+                        setShowModal(true);
                       }}
                     >
                       <i className="bi bi-image fs-4"></i>
                     </Button>
                   </td>
                   <td className="text-end pe-4">
-                    <Button 
-                      variant="outline-primary" 
-                      onClick={(e) => { 
+                    <Button
+                      variant="outline-primary"
+                      onClick={(e) => {
                         e.stopPropagation();
-                        setSelectedPayment(p); 
-                        setShowModal(true); 
+                        setSelectedPayment(p);
+                        setShowModal(true);
                       }}
                     >
                       ตรวจสอบ
@@ -179,9 +227,9 @@ export default function AdminPaymentsPage() {
           <Row className="g-0">
             <Col md={7} className="bg-dark d-flex align-items-center justify-content-center p-3 position-relative" style={{ minHeight: '500px' }}>
               {selectedPayment && (
-                <Image 
-                  src={selectedPayment.slipImage} 
-                  alt="Payment Slip" 
+                <Image
+                  src={selectedPayment.slipImage}
+                  alt="Payment Slip"
                   className="shadow"
                   fill
                   style={{ objectFit: 'contain', padding: '10px' }}
@@ -211,7 +259,7 @@ export default function AdminPaymentsPage() {
                         {(selectedPayment.ocrResult.confidence || 0).toFixed(0)}% Confidence
                       </Badge>
                     </div>
-                    
+
                     <div className="mb-1 d-flex justify-content-between">
                       <span className="text-muted">Detected Amount:</span>
                       <span className="fw-bold">฿{selectedPayment.ocrResult.amount.toLocaleString()}</span>
@@ -247,31 +295,31 @@ export default function AdminPaymentsPage() {
                   </div>
                 )}
               </div>
-              
+
               <hr />
-              
+
               <Form.Group className="mb-4">
                 <Form.Label className="small fw-bold">หมายเหตุ (ถ้ามี)</Form.Label>
-                <Form.Control 
-                  as="textarea" 
-                  rows={2} 
+                <Form.Control
+                  as="textarea"
+                  rows={2}
                   placeholder="เช่น สาเหตุการปฏิเสธ หรือข้อมูลเพิ่มเติม..."
                   value={rejectionReason}
                   onChange={(e) => setRejectionReason(e.target.value)}
                 />
               </Form.Group>
-              
+
               <div className="d-grid gap-2">
-                <Button 
-                  variant="success" 
-                  size="lg" 
+                <Button
+                  variant="success"
+                  size="lg"
                   onClick={() => handleAction('approved')}
                   disabled={actionLoading}
                 >
                   {actionLoading ? <Spinner animation="border" size="sm" /> : 'อนุมัติการชำระเงิน'}
                 </Button>
-                <Button 
-                  variant="outline-danger" 
+                <Button
+                  variant="outline-danger"
                   onClick={() => handleAction('rejected')}
                   disabled={actionLoading}
                 >

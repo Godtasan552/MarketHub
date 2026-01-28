@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Container, Table, Badge, Button, Form, Spinner, Alert, Card, InputGroup, Row, Col, Modal } from 'react-bootstrap';
 import BookingDetail from '@/components/admin/BookingDetail';
+import * as XLSX from 'xlsx';
 
 interface Booking {
   _id: string;
@@ -28,12 +29,12 @@ export default function AdminBookingsPage() {
   const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [rentalTypeFilter, setRentalTypeFilter] = useState('');
-  
+
   // View Modal
   const [viewingBooking, setViewingBooking] = useState<Booking | null>(null);
   const [showViewModal, setShowViewModal] = useState(false);
@@ -73,7 +74,7 @@ export default function AdminBookingsPage() {
 
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      result = result.filter(b => 
+      result = result.filter(b =>
         b.user?.name?.toLowerCase().includes(term) ||
         b.user?.email?.toLowerCase().includes(term) ||
         b.lock?.lockNumber?.toLowerCase().includes(term)
@@ -103,6 +104,57 @@ export default function AdminBookingsPage() {
     }
   };
 
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'pending_payment': return 'รอชำระเงิน';
+      case 'pending_verification': return 'รอตรวจสอบ';
+      case 'active': return 'ใช้งานอยู่';
+      case 'expired': return 'หมดอายุ';
+      case 'cancelled': return 'ยกเลิก';
+      default: return status;
+    }
+  };
+
+  const handleExportExcel = () => {
+    if (filteredBookings.length === 0) return;
+
+    const dataToExport = filteredBookings.map(b => ({
+      'รหัสจอง': b._id.toUpperCase(),
+      'ชื่อผู้จอง': b.user?.name || 'ไม่ระบุชื่อ',
+      'อีเมล': b.user?.email || '-',
+      'รหัสล็อก': b.lock?.lockNumber || '-',
+      'โซน': b.lock?.zone?.name || '-',
+      'วันที่เริ่ม': new Date(b.startDate).toLocaleDateString('th-TH'),
+      'วันที่สิ้นสุด': new Date(b.endDate).toLocaleDateString('th-TH'),
+      'ประเภทการเช่า': getRentalTypeLabel(b.rentalType),
+      'ยอดเงินรวม': b.totalAmount,
+      'สถานะ': getStatusLabel(b.status),
+      'วันที่ทำรายการ': new Date(b.createdAt).toLocaleString('th-TH'),
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'รายการจอง');
+
+    // Adjust column widths
+    const maxWidths = [
+      { wch: 25 }, // ID
+      { wch: 20 }, // Name
+      { wch: 25 }, // Email
+      { wch: 10 }, // Lock
+      { wch: 15 }, // Zone
+      { wch: 15 }, // Start
+      { wch: 15 }, // End
+      { wch: 15 }, // Type
+      { wch: 15 }, // Amount
+      { wch: 15 }, // Status
+      { wch: 20 }, // CreatedAt
+    ];
+    worksheet['!cols'] = maxWidths;
+
+    XLSX.writeFile(workbook, `รายการจอง_MarketHub_${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
+
   return (
     <Container fluid className="py-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
@@ -110,9 +162,19 @@ export default function AdminBookingsPage() {
           <h2 className="fw-bold m-0 text-dark">รายการจองทั้งหมด</h2>
           <p className="text-muted mb-0">จัดการและตรวจสอบประวัติการจองพื้นที่ของลูกค้า</p>
         </div>
-        <Button variant="outline-primary" onClick={fetchBookings} disabled={loading}>
-          <i className="bi bi-arrow-clockwise me-2"></i>รีเฟรช
-        </Button>
+        <div className="d-flex gap-2">
+          <Button
+            variant="success"
+            onClick={handleExportExcel}
+            disabled={loading || filteredBookings.length === 0}
+            className="d-flex align-items-center"
+          >
+            <i className="bi bi-file-earmark-excel me-2"></i>ส่งออก Excel
+          </Button>
+          <Button variant="outline-primary" onClick={fetchBookings} disabled={loading} className="d-flex align-items-center">
+            <i className="bi bi-arrow-clockwise me-2"></i>รีเฟรช
+          </Button>
+        </div>
       </div>
 
       <Card className="border shadow-sm mb-4 border-start-0 border-top-0 border-bottom-0 border-end-0" style={{ borderLeft: '4px solid var(--bs-primary)', boxShadow: '0 0.5rem 1rem rgba(0, 0, 0, 0.08)' }}>
@@ -136,8 +198,8 @@ export default function AdminBookingsPage() {
               </InputGroup>
             </Col>
             <Col md={3}>
-              <Form.Select 
-                value={statusFilter} 
+              <Form.Select
+                value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className="bg-light border shadow-none"
               >
@@ -150,8 +212,8 @@ export default function AdminBookingsPage() {
               </Form.Select>
             </Col>
             <Col md={3}>
-              <Form.Select 
-                value={rentalTypeFilter} 
+              <Form.Select
+                value={rentalTypeFilter}
                 onChange={(e) => setRentalTypeFilter(e.target.value)}
                 className="bg-light border shadow-none"
               >
@@ -193,8 +255,8 @@ export default function AdminBookingsPage() {
             </thead>
             <tbody>
               {filteredBookings.map((b) => (
-                <tr 
-                  key={b._id} 
+                <tr
+                  key={b._id}
                   onClick={() => {
                     setViewingBooking(b);
                     setShowViewModal(true);
