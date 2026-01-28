@@ -15,7 +15,9 @@ Before deploying the complete system, we must ensure all core functionalities wo
 - [ ] **Price Range**: Min/Max price filters return correct results.
 - [ ] **Search**: Empty result state displayed correctly ("ไม่พบข้อมูล").
 - [ ] **Status Badge**: Locks display correct status badges (Available/Booked/Rented).
-- [ ] **Date Locking**: Start date in booking form is auto-set and read-only.
+- [ ] **Advance Booking Lead Time**: Can select up to 14 days in advance (Max 14 days lead).
+- [ ] **Calendar UI**: Booked dates correctly shown in orange and disabled.
+- [ ] **Timezone Sync**: Selecting a date in the calendar sends correct YYYY-MM-DD to the API.
 
 ## 3. Engagement Features (New)
 - [ ] **Bookmark Toggle**: Clicking bookmark icon toggles state immediately.
@@ -53,6 +55,10 @@ Before deploying the complete system, we must ensure all core functionalities wo
 - [ ] **Row Navigation**: Clicking anywhere on the payment table row opens the verification modal.
 - [ ] **Responsive Navigation**: Sidebar shows on Desktop; Navbar shows on Mobile.
 - [ ] **Dashboard Charts**: Zone names are not cut off; formatters handle undefined values safely.
+- [ ] **Export Bookings**: "Export Excel" in Bookings page generates valid .xlsx.
+- [ ] **Export Payments**: "Export Excel" in Payments page includes OCR details.
+- [ ] **Export Locks**: "Export Excel" in Locks page includes pricing and status.
+- [ ] **Export Staff**: "Export Excel" in Staff page works.
 - [ ] **Zone Name Fix**: No "ไม่ระบุโซน" displayed in bookings table (Check API population).
 - [ ] **Emerald Theme**: Visual consistency across all admin pages.
 - [ ] **Seed Data**: `npm run seed-market-data` generates 4 zones with 20+ locks and various pricing.

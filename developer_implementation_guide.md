@@ -404,10 +404,11 @@ stateDiagram-v2
 > **ปัจจุบัน**: เราใช้ `Lock.status = 'booked' | 'available'` เพื่อความรวดเร็วในการพัฒนาช่วงแรก
 > **ข้อควรระวัง (Design Decision)**: ในอนาคต `Lock` ควรทำหน้าที่แค่บอกสถานะทางกายภาพ (เช่น `active` | `maintenance`) ส่วน "ความว่าง" (Availability) ควรถูกคำนวณจาก `Booking` ในช่วงเวลาที่เลือก เพื่อให้ล็อคหนึ่งสามารถมีหลายการจองล่วงหน้าได้
 >
-> **Future Improvement (Roadmap)**:
-> - [ ] Remove `Lock.status = booked`
-> - [ ] Calculate availability purely from Booking collection
-> - [ ] Enable advance booking for same lock (ซ้อนกันได้ถ้าไม่ชนเวลา)
+> **Implementation (Advance Booking)**:
+> - [x] Update `POST /api/bookings` to use `calculateBookingDetails` for `endDate` extension.
+> - [x] Enable 14-day advance window (lead time validation).
+> - [x] Implement local timezone parsing (`YYYY-MM-DDT00:00:00`) to prevent offset bugs.
+> - [x] Create `CalendarPicker` component to visualize booked dates and enforce lead time.
 
 #### 4. Booking Flow Implementation
 
@@ -600,6 +601,10 @@ jobs:
     - [x] User: Prevent joining queue if has active/pending booking for the same lock
     - [x] Admin: Auto-clear queue on payment approval
     - [x] Global: Price & Search input sanitization
+- [x] **Export to Excel System**:
+    - [x] Added `xlsx` library for spreadsheet generation.
+    - [x] ImplementedThai label mapping for all exported fields.
+    - [x] Integrated export buttons in Bookings, Payments, Locks, and Staff admin pages.
 
 ---
 

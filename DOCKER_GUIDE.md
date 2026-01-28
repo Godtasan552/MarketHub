@@ -6,9 +6,9 @@
 
 ## 1. ไฟล์โครงสร้างที่สำคัญ (Infrastructure)
 ในโปรเจกต์ได้เตรียมไฟล์หลักไว้ 4 ไฟล์ ดังนี้:
-1.  **`Dockerfile`**: ใช้ Multi-stage build เพื่อประสิทธิภาพสูงสุด (แบ่งเป็น stage ติดตั้ง Dependencies, Stage Build และ Stage Runner สำหรับ Production)
-2.  **`docker-compose.yml`**: ใช้สำหรับรันทั้ง **ตัว Web App** และ **Database (MongoDB)** พร้อมกันในคำสั่งเดียว
-3.  **`.dockerignore`**: ใช้ยกเว้นไฟล์ที่ไม่จำเป็น (เช่น `node_modules`, `.next`, `.env`) เพื่อความรวดเร็วในการ Build
+1.  **`Dockerfile`**: ใช้ Multi-stage build เพื่อประสิทธิภาพสูงสุด (พร้อม **Thai Comments** อธิบายทุกขั้นตอน)
+2.  **`docker-compose.yml`**: ใช้สำหรับรันทั้ง **ตัว Web App** และ **Database (MongoDB)** พร้อมกัน (มีคำอธิบายภาษาไทยและตั้งค่า Proxy Trust)
+3.  **`.dockerignore`**: ใช้ยกเว้นไฟล์ที่ไม่จำเป็น (มีคำอธิบายภาษาไทยถึงเหตุผลที่ต้องยกเว้น)
 4.  **`next.config.ts`**: แก้ไขเพิ่ม `output: 'standalone'` เพื่อให้ Next.js สร้างไฟล์ที่จำเป็นต่อการรัน Docker โดยเฉพาะ
 
 ---
@@ -34,6 +34,9 @@ MONGODB_URI=mongodb://mongodb:27017/markethub
 NEXTAUTH_URL=http://localhost:3000
 NEXTAUTH_SECRET=your_secret_key
 CRON_SECRET=your_cron_secret_key
+
+# สำคัญสำหรับ Docker/Proxy (เพื่อให้ Auth ทำงานได้)
+AUTH_TRUST_HOST=true
 ```
 
 ### สเต็ปที่ 2: เริ่มระบบด้วย Docker Compose
