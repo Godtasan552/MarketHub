@@ -1,17 +1,31 @@
+# รายชื่อไฟล์และโฟลเดอร์ที่ไม่ต้องการส่งเข้าไปใน Docker Image
+# เพื่อช่วยลดขนาดของ Image และป้องกันข้อมูลสำคัญหลุดไป
+
+# Dependencies และไฟล์ที่สร้างจากการ Build (เราจะติดตั้งและ Build ใหม่ใน Docker)
 node_modules
 .next
 out
 build
+
+# ประวัติและการตั้งค่าของ Git
 .git
+
+# ไฟล์เก็บรหัสผ่านและค่าความลับต่างๆ (สำคัญมาก: ห้ามใส่เข้าไปใน Image)
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+
+# ไฟล์ Log ต่างๆ
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# ไฟล์สำหรับจัดการ Docker เอง (ไม่จำเป็นต้องอยู่ใน Image)
 .dockerignore
 Dockerfile
 docker-compose.yml
+
+# เอกสารประกอบโครงการ
 README.md

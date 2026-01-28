@@ -1,12 +1,15 @@
+# ไฟล์ Docker Compose สำหรับจัดการ Service ต่างๆ ของระบบ
 services:
+  # ส่วนของ Application (Next.js)
   markethub:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: markethub-app
     ports:
-      - "3000:3000"
+      - "3000:3000" # เชื่อมพอร์ต 3000 ของเครื่องโฮสต์เข้ากับคอนเทนเนอร์
     environment:
+      # ตั้งค่า Environment Variables ต่างๆ ที่จำเป็น
       - MONGODB_URI=${MONGODB_URI}
       - NEXTAUTH_URL=${NEXTAUTH_URL}
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
@@ -16,16 +19,19 @@ services:
       - ADMIN_NAME=${ADMIN_NAME}
       - ADMIN_USERNAME=${ADMIN_USERNAME}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD}
-    restart: always
+      - AUTH_TRUST_HOST=true # อนุญาตให้ยืนยันตัวตนผ่าน Proxy/Docker ได้
+    restart: always # เริ่มคอนเทนเนอร์ใหม่โดยอัตโนมัติหากเครื่องรีสตาร์ทหรือล่ม
 
+  # ส่วนของ Database (MongoDB)
   mongodb:
     image: mongo:latest
     container_name: markethub-db
     ports:
-      - "27017:27017"
+      - "27017:27017" # พอร์ตมาตรฐานของ MongoDB
     volumes:
-      - mongodb_data:/data/db
+      - mongodb_data:/data/db # เก็บข้อมูลไว้ใน Volume เพื่อไม่ให้หายเมื่อลบคอนเทนเนอร์
     restart: always
 
+# ประกาศ Volume สำหรับเก็บข้อมูล Database แบบถาวร
 volumes:
   mongodb_data:
